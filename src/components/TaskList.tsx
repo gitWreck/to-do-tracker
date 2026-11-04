@@ -150,17 +150,17 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-5 max-w-6xl mx-auto w-full transition-colors">
+    <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3.5 sm:py-5 max-w-6xl mx-auto w-full transition-colors">
       {/* Top Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 mb-5">
-        <div className="relative flex-1 w-full">
+      <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+        <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-neutral-500" />
           <input
             type="text"
             placeholder="Search tasks, descriptions, or #tags..."
             value={filters.searchQuery}
             onChange={e => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-neutral-100 placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-xs transition"
+            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-neutral-100 placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-xs transition"
           />
           {filters.searchQuery && (
             <button
@@ -173,7 +173,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
         </div>
 
         {/* View Layout Toggle (List vs Grid/Card style) */}
-        <div className="flex items-center gap-1 bg-white dark:bg-neutral-900 p-1 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-xs flex-shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-white dark:bg-neutral-900 p-1 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-xs flex-shrink-0">
           <button
             onClick={() => setFilters(prev => ({ ...prev, layoutStyle: 'LIST' }))}
             className={`p-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 ${

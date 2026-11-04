@@ -181,7 +181,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
       )}
 
       {/* Quick Action Icons: Edit & Delete */}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
         <button
           onClick={() => setIsEditingTitle(true)}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition"
@@ -239,7 +239,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {getPriorityBadge(task.priority)}
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => setIsEditingTitle(true)}
                   className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition"

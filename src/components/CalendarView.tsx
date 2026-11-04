@@ -174,9 +174,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-57px)] overflow-hidden transition-colors">
       {/* Calendar Header Controls */}
-      <div className="px-6 py-3 border-b border-slate-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/40 backdrop-blur-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+      <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-slate-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/40 backdrop-blur-sm flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span>{monthNames[month]} {year}</span>
           </h2>
 
@@ -205,14 +205,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
         </div>
 
         {/* Month Stats */}
-        <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-neutral-400">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-600 dark:text-neutral-400">
           <span className="flex items-center gap-1.5 font-medium">
-            <Flame className="w-4 h-4 text-orange-500" />
-            Month Hours: <strong className="text-slate-900 dark:text-white font-mono">{monthStats.totalHours} hrs</strong>
+            <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500" />
+            <span className="hidden sm:inline">Month Hours:</span>
+            <strong className="text-slate-900 dark:text-white font-mono">{monthStats.totalHours} hrs</strong>
           </span>
           <span className="flex items-center gap-1.5 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            Completed: <strong className="text-slate-900 dark:text-white">{monthStats.completedCount}</strong>
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
+            <span className="hidden sm:inline">Completed:</span>
+            <strong className="text-slate-900 dark:text-white">{monthStats.completedCount}</strong>
           </span>
           <button
             onClick={() => onOpenCreateWithDate(selectedDateStr)}
@@ -225,11 +227,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
       </div>
 
       {/* Main Grid + Day Inspector Split */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Month Calendar Grid */}
-        <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+        <div className="flex-1 flex flex-col p-2.5 sm:p-4 overflow-y-auto min-w-0">
           {/* Weekday Names Header */}
-          <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-1">
+          <div className="grid grid-cols-7 gap-1 text-center font-bold text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-1">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
               <div key={d} className="py-1">
                 {d}
@@ -238,7 +240,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
           </div>
 
           {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1 flex-1 min-h-[500px]">
+          <div className="grid grid-cols-7 gap-1 flex-1 min-h-[480px]">
             {calendarDays.map(day => {
               const dayData = dateDataMap.get(day.dateStr);
               const isSelected = selectedDateStr === day.dateStr;
@@ -317,7 +319,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
         </div>
 
         {/* Selected Date Inspector Sidebar Panel */}
-        <div className="w-80 border-l border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col p-4 overflow-y-auto">
+        <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col p-4 overflow-y-auto max-h-72 lg:max-h-none flex-shrink-0">
           {/* Day Inspector Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-neutral-800 mb-4">
             <div>

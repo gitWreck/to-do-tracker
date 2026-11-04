@@ -44,6 +44,7 @@ function MainApp() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isMiniWidgetOpen, setIsMiniWidgetOpen] = useState(false);
   const [isPipActive, setIsPipActive] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Sync PiP floating window DOM
   const renderPipContent = useCallback((container: HTMLElement) => {
@@ -165,7 +166,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Top Dock Header (Phase 3) */}
+      {/* Top Dock Header */}
       <ActiveTaskDock
         onOpenCreateModal={() => {
           setCreatePresetDate(undefined);
@@ -175,11 +176,32 @@ function MainApp() {
         onOpenReportModal={() => setIsReportOpen(true)}
         onTogglePip={handleTogglePip}
         isPipActive={isPipActive}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(prev => !prev)}
       />
 
       {/* Main Workspace: Sidebar + Task Board / Calendar */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Desktop Sidebar (hidden on mobile) */}
         <Sidebar />
+
+        {/* Mobile Slide-Out Drawer Navigation */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex animate-in fade-in duration-150">
+            {/* Backdrop overlay */}
+            <div
+              className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            {/* Off-canvas drawer */}
+            <div className="relative z-10 animate-in slide-in-from-left duration-200 h-full">
+              <Sidebar
+                isMobileDrawer={true}
+                onCloseMobile={() => setIsMobileMenuOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-neutral-950">
           {filters.statusTab === 'CALENDAR' ? (
             <CalendarView onOpenCreateWithDate={handleOpenCreateWithDate} />

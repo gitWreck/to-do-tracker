@@ -16,9 +16,15 @@ import {
   Plus,
   Hash,
   CheckSquare,
+  X,
 } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onCloseMobile?: () => void;
+  isMobileDrawer?: boolean;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer = false }) => {
   const {
     tasks,
     projects,
@@ -26,6 +32,13 @@ export const Sidebar: React.FC = () => {
     setFilters,
     createProject,
   } = useTasks();
+
+  const handleAction = (cb: () => void) => {
+    cb();
+    if (isMobileDrawer && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
 
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState('#3b82f6');
@@ -49,10 +62,16 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 border-r border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col h-[calc(100vh-57px)] select-none transition-colors">
+    <aside
+      className={`${
+        isMobileDrawer
+          ? 'w-72 max-w-[85vw] h-full shadow-2xl border-r'
+          : 'hidden md:flex w-64 border-r h-[calc(100vh-57px)]'
+      } border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col select-none transition-colors`}
+    >
       {/* Brand Header */}
-      <div className="p-4 pb-0">
-        <div className="flex items-center gap-2.5 px-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-xs">
+      <div className="p-4 pb-0 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 px-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-xs flex-1">
           <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-xs flex-shrink-0">
             <CheckSquare className="w-4 h-4" />
           </div>
@@ -61,6 +80,15 @@ export const Sidebar: React.FC = () => {
             <p className="text-[10px] text-slate-500 dark:text-neutral-400 font-medium truncate">Work & Time Tracker</p>
           </div>
         </div>
+        {isMobileDrawer && (
+          <button
+            onClick={onCloseMobile}
+            className="ml-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 transition cursor-pointer"
+            title="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       <div className="p-4 flex-1 overflow-y-auto space-y-6">
@@ -72,7 +100,7 @@ export const Sidebar: React.FC = () => {
           </label>
           <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-neutral-900 p-1 rounded-xl border border-slate-200 dark:border-neutral-800">
             <button
-              onClick={() => setFilters(prev => ({ ...prev, selectedLocation: 'ALL' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, selectedLocation: 'ALL' })))}
               className={`py-1.5 px-2 text-xs font-medium rounded-lg transition text-center ${
                 filters.selectedLocation === 'ALL'
                   ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-xs'
@@ -82,7 +110,7 @@ export const Sidebar: React.FC = () => {
               All
             </button>
             <button
-              onClick={() => setFilters(prev => ({ ...prev, selectedLocation: 'OFFICE' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, selectedLocation: 'OFFICE' })))}
               className={`flex items-center justify-center gap-1 py-1.5 px-2 text-xs font-medium rounded-lg transition ${
                 filters.selectedLocation === 'OFFICE'
                   ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-600/30 dark:border-blue-500/50 dark:text-blue-300 font-semibold shadow-xs'
@@ -93,7 +121,7 @@ export const Sidebar: React.FC = () => {
               Office
             </button>
             <button
-              onClick={() => setFilters(prev => ({ ...prev, selectedLocation: 'HOME' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, selectedLocation: 'HOME' })))}
               className={`flex items-center justify-center gap-1 py-1.5 px-2 text-xs font-medium rounded-lg transition ${
                 filters.selectedLocation === 'HOME'
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-600/30 dark:border-emerald-500/50 dark:text-emerald-300 font-semibold shadow-xs'
@@ -113,7 +141,7 @@ export const Sidebar: React.FC = () => {
           </label>
           <div className="space-y-1">
             <button
-              onClick={() => setFilters(prev => ({ ...prev, statusTab: 'PENDING' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, statusTab: 'PENDING' })))}
               className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl transition ${
                 filters.statusTab === 'PENDING'
                   ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-semibold shadow-xs'
@@ -130,7 +158,7 @@ export const Sidebar: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setFilters(prev => ({ ...prev, statusTab: 'CALENDAR' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, statusTab: 'CALENDAR' })))}
               className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl transition ${
                 filters.statusTab === 'CALENDAR'
                   ? 'bg-purple-50 text-purple-700 dark:bg-purple-600/20 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-semibold shadow-xs'
@@ -147,7 +175,7 @@ export const Sidebar: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setFilters(prev => ({ ...prev, statusTab: 'COMPLETED' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, statusTab: 'COMPLETED' })))}
               className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl transition ${
                 filters.statusTab === 'COMPLETED'
                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 font-semibold shadow-xs'
@@ -193,10 +221,12 @@ export const Sidebar: React.FC = () => {
                 <button
                   key={cat.id}
                   onClick={() =>
-                    setFilters(prev => ({
-                      ...prev,
-                      selectedCategory: cat.id as TaskCategory | 'ALL',
-                    }))
+                    handleAction(() =>
+                      setFilters(prev => ({
+                        ...prev,
+                        selectedCategory: cat.id as TaskCategory | 'ALL',
+                      }))
+                    )
                   }
                   className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition font-medium ${
                     isSelected
@@ -272,7 +302,7 @@ export const Sidebar: React.FC = () => {
 
           <div className="space-y-1">
             <button
-              onClick={() => setFilters(prev => ({ ...prev, selectedProjectId: 'ALL' }))}
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, selectedProjectId: 'ALL' })))}
               className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition font-medium ${
                 filters.selectedProjectId === 'ALL'
                   ? 'bg-slate-200 dark:bg-neutral-800 text-slate-900 dark:text-white font-semibold'
@@ -293,10 +323,12 @@ export const Sidebar: React.FC = () => {
                 <button
                   key={project.id}
                   onClick={() =>
-                    setFilters(prev => ({
-                      ...prev,
-                      selectedProjectId: isSelected ? 'ALL' : project.id,
-                    }))
+                    handleAction(() =>
+                      setFilters(prev => ({
+                        ...prev,
+                        selectedProjectId: isSelected ? 'ALL' : project.id,
+                      }))
+                    )
                   }
                   className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition font-medium ${
                     isSelected
@@ -327,7 +359,7 @@ export const Sidebar: React.FC = () => {
               </label>
               {filters.selectedTag !== 'ALL' && (
                 <button
-                  onClick={() => setFilters(prev => ({ ...prev, selectedTag: 'ALL' }))}
+                  onClick={() => handleAction(() => setFilters(prev => ({ ...prev, selectedTag: 'ALL' })))}
                   className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
                   Clear
@@ -341,10 +373,12 @@ export const Sidebar: React.FC = () => {
                   <button
                     key={tag}
                     onClick={() =>
-                      setFilters(prev => ({
-                        ...prev,
-                        selectedTag: isSelected ? 'ALL' : tag,
-                      }))
+                      handleAction(() =>
+                        setFilters(prev => ({
+                          ...prev,
+                          selectedTag: isSelected ? 'ALL' : tag,
+                        }))
+                      )
                     }
                     className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md transition ${
                       isSelected

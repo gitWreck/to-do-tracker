@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#4338ca" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background Squircle -->
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#brandGrad)" filter="url(#shadow)" />
+
+  <!-- Inner Checkmark & Stopwatch Glyph -->
+  <g fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Check Box Outer Frame -->
+    <rect x="116" y="116" width="280" height="280" rx="44" stroke-opacity="0.3" stroke-width="28" />
+    <!-- Checkmark Path -->
+    <path d="M184 256 l54 54 l110 -110" stroke-width="42" />
+  </g>
+
+  <!-- Live Stopwatch indicator dot -->
+  <circle cx="396" cy="116" r="28" fill="#10b981" stroke="#0f172a" stroke-width="8" />
+</svg>
