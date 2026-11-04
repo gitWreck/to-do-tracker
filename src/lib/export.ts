@@ -120,3 +120,4 @@ export function generateWeeklySummaryMarkdown(rows: AccomplishmentRow[]): string
   markdown += `---\n**Total Time Logged:** ${(grandTotalSeconds / 3600).toFixed(2)} hours\n`;
   return markdown;
 }
+

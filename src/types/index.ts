@@ -56,3 +56,4 @@ export interface ActiveTimerState {
   startTime: number | null; // Milliseconds timestamp (Date.now())
   elapsedSeconds: number;
 }
+

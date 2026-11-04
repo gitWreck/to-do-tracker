@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TaskProvider, useTasks } from '@/context/TaskContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { ActiveTaskDock } from '@/components/ActiveTaskDock';
 import { Sidebar } from '@/components/Sidebar';
 import { TaskList } from '@/components/TaskList';
@@ -85,7 +86,7 @@ function MainApp() {
     }
   }, [isPipActive, activeTimer?.elapsedSeconds, activeTask, renderPipContent]);
 
-  const handleTogglePip = async () => {
+  const handleTogglePip = useCallback(async () => {
     if (isPipActive) {
       closeMiniWidgetPip();
       setIsPipActive(false);
@@ -105,7 +106,7 @@ function MainApp() {
         setIsMiniWidgetOpen(true);
       }
     }
-  };
+  }, [isPipActive, renderPipContent]);
 
   // Global hotkeys
   useEffect(() => {
@@ -132,7 +133,7 @@ function MainApp() {
   }, [handleTogglePip]);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Dock Header (Phase 3) */}
       <ActiveTaskDock
         onOpenCreateModal={() => setIsCreateOpen(true)}
@@ -145,7 +146,7 @@ function MainApp() {
       {/* Main Workspace: Sidebar + Task Board */}
       <div className="flex-1 flex overflow-hidden">
         <Sidebar />
-        <main className="flex-1 flex flex-col overflow-hidden bg-neutral-950">
+        <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-neutral-950">
           <TaskList onOpenCreateModal={() => setIsCreateOpen(true)} />
         </main>
       </div>
@@ -170,7 +171,6 @@ function MainApp() {
         isOpen={isMiniWidgetOpen}
         onClose={() => setIsMiniWidgetOpen(false)}
         onOpenPip={handleTogglePip}
-        isPipActive={isPipActive}
       />
     </div>
   );
@@ -178,8 +178,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <TaskProvider>
-      <MainApp />
-    </TaskProvider>
+    <ThemeProvider>
+      <TaskProvider>
+        <MainApp />
+      </TaskProvider>
+    </ThemeProvider>
   );
 }

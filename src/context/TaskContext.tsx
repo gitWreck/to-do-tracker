@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Task, Project, ActiveTimerState, FilterState, TimeEntry } from '@/types';
 import {
   loadTasks,
@@ -19,7 +19,7 @@ interface TaskContextType {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   filteredTasks: Task[];
-  
+
   // Actions
   startTimer: (taskId: string) => void;
   stopTimer: () => void;
@@ -58,10 +58,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     statusTab: 'PENDING',
   });
 
-  // Keep ref for activeTimer so timer interval can access latest state without re-creating interval
-  const activeTimerRef = useRef(activeTimer);
-  activeTimerRef.current = activeTimer;
-
   // Persist tasks and projects whenever they change
   useEffect(() => {
     saveTasks(tasks);
@@ -75,14 +71,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveActiveTimer(activeTimer);
   }, [activeTimer]);
 
-  // High precision timer interval (updates every 500ms based on real clock delta)
+  // High precision timer interval (calculates delta against Date.now())
   useEffect(() => {
     if (!activeTimer?.startTime) return;
 
     const interval = setInterval(() => {
-      if (!activeTimerRef.current?.startTime) return;
-      const elapsed = Math.floor((Date.now() - activeTimerRef.current.startTime) / 1000);
-      setActiveTimer(prev => (prev ? { ...prev, elapsedSeconds: elapsed } : null));
+      setActiveTimer(prev => {
+        if (!prev?.startTime) return null;
+        const elapsed = Math.floor((Date.now() - prev.startTime) / 1000);
+        return { ...prev, elapsedSeconds: elapsed };
+      });
     }, 500);
 
     return () => clearInterval(interval);
@@ -91,7 +89,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const activeTask = useMemo(() => {
     if (!activeTimer?.taskId) return null;
     return tasks.find(t => t.id === activeTimer.taskId) || null;
-  }, [activeTimer?.taskId, tasks]);
+  }, [activeTimer, tasks]);
 
   // Stop running timer and commit time entry to the task
   const stopTimer = () => {
@@ -122,7 +120,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ...t,
             timeEntries: updatedEntries,
             totalDurationSeconds: newTotal,
-            // Keep IN_PROGRESS or revert to PENDING if not completed
             status: t.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS',
           };
         }
@@ -191,8 +188,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           origin: { y: 0.8 },
           colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899'],
         });
-      } catch (e) {
-        // Safe fallback if confetti isn't available
+      } catch {
+        // Safe fallback if canvas is unavailable
       }
     }
 
@@ -213,7 +210,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createTask = (data: Partial<Task> & { title: string }): Task => {
     // Hashtag parser: e.g. "Fix API #CSAR #Backend"
     const parsedTags: string[] = [...(data.tags || [])];
-    const hashRegex = /#([a-zA-Z0-9_\-]+)/g;
+    const hashRegex = /#([a-zA-Z0-9_-]+)/g;
     let match;
     while ((match = hashRegex.exec(data.title)) !== null) {
       const tag = match[1];
@@ -272,10 +269,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const endMs = new Date(endIso).getTime();
     const durationSeconds = Math.max(60, Math.floor((endMs - startMs) / 1000));
 
+    const taskId = `task-${Date.now()}`;
     const entryId = `manual-entry-${Date.now()}`;
+    
     const newEntry: TimeEntry = {
       id: entryId,
-      taskId: '',
+      taskId,
       startTime: startIso,
       endTime: endIso,
       durationSeconds,
@@ -284,7 +283,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const newTask: Task = {
-      id: `task-${Date.now()}`,
+      id: taskId,
       title: data.title.trim(),
       category: data.category,
       location: data.location,
@@ -295,7 +294,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: startIso,
       completedAt: data.markCompleted ? endIso : undefined,
       dueDate: data.date,
-      timeEntries: [{ ...newEntry, taskId: `task-${Date.now()}` }],
+      timeEntries: [newEntry],
       totalDurationSeconds: durationSeconds,
     };
 

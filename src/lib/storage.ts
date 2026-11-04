@@ -101,7 +101,7 @@ export function loadProjects(): Project[] {
     }
     return JSON.parse(raw);
   } catch (err) {
-    console.error('Failed to load projects from storage:', err);
+    console.warn('Failed to load projects from storage:', err);
     return INITIAL_PROJECTS;
   }
 }
@@ -110,7 +110,7 @@ export function saveProjects(projects: Project[]): void {
   try {
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
   } catch (err) {
-    console.error('Failed to save projects to storage:', err);
+    console.warn('Failed to save projects to storage:', err);
   }
 }
 
@@ -123,7 +123,7 @@ export function loadTasks(): Task[] {
     }
     return JSON.parse(raw);
   } catch (err) {
-    console.error('Failed to load tasks from storage:', err);
+    console.warn('Failed to load tasks from storage:', err);
     return INITIAL_TASKS;
   }
 }
@@ -132,7 +132,7 @@ export function saveTasks(tasks: Task[]): void {
   try {
     localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
   } catch (err) {
-    console.error('Failed to save tasks to storage:', err);
+    console.warn('Failed to save tasks to storage:', err);
   }
 }
 
@@ -141,7 +141,7 @@ export function loadActiveTimer(): ActiveTimerState | null {
     const raw = localStorage.getItem(TIMER_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
-  } catch (err) {
+  } catch {
     return null;
   }
 }
@@ -154,7 +154,7 @@ export function saveActiveTimer(state: ActiveTimerState | null): void {
       localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
     }
   } catch (err) {
-    console.error('Failed to save timer state:', err);
+    console.warn('Failed to save timer state:', err);
   }
 }
 

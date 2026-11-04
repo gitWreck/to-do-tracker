@@ -6,7 +6,7 @@ export interface PipWindowRef {
   isOpen: boolean;
 }
 
-let pipState: PipWindowRef = {
+const pipState: PipWindowRef = {
   window: null,
   container: null,
   isOpen: false,
@@ -56,8 +56,8 @@ export async function openMiniWidgetPip(
           });
           pipWindow.document.head.appendChild(newStyle);
         }
-      } catch (e) {
-        // Handle cross-origin stylesheet exceptions
+      } catch {
+        // Handle cross-origin stylesheet exceptions gracefully
       }
     });
 
@@ -85,7 +85,7 @@ export async function openMiniWidgetPip(
 
     return pipWindow;
   } catch (err) {
-    console.error('Failed to open Picture-in-Picture window:', err);
+    console.warn('Failed to open Picture-in-Picture window:', err);
     return null;
   }
 }

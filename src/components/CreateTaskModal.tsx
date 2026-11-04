@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { TaskCategory, WorkLocation, TaskPriority } from '@/types';
 import { getTodayDateString } from '@/lib/time';
-import { X, Building2, Home, Compass, Code2, FileText, Users, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -50,19 +50,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-colors">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
               <Plus className="w-4 h-4" />
             </div>
-            <h2 className="text-base font-semibold text-white">Create New Task</h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Create New Task</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+            className="p-1 rounded-lg text-slate-400 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -72,8 +72,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-              Task Title <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+              Task Title <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -82,13 +82,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
               placeholder="e.g. Implement curriculum endpoint #CSAR"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
               Description / Notes
             </label>
             <textarea
@@ -96,20 +96,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
               placeholder="Add details, links, or notes..."
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
             />
           </div>
 
           {/* Grid: Project & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Project
               </label>
               <select
                 value={projectId}
                 onChange={e => setProjectId(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               >
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>
@@ -120,13 +120,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Category
               </label>
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value as TaskCategory)}
-                className="w-full px-3 py-2 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               >
                 <option value="PROGRAMMING">Programming</option>
                 <option value="ADMIN">Admin Task</option>
@@ -139,17 +139,17 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
           {/* Location & Priority */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Work Location
               </label>
-              <div className="grid grid-cols-3 gap-1 bg-neutral-950 p-1 rounded-xl border border-neutral-800">
+              <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-neutral-950 p-1 rounded-xl border border-slate-200 dark:border-neutral-800">
                 <button
                   type="button"
                   onClick={() => setLocation('OFFICE')}
                   className={`py-1 text-xs rounded-lg font-medium transition ${
                     location === 'OFFICE'
-                      ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Office
@@ -159,8 +159,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                   onClick={() => setLocation('HOME')}
                   className={`py-1 text-xs rounded-lg font-medium transition ${
                     location === 'HOME'
-                      ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/50'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Home
@@ -170,8 +170,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                   onClick={() => setLocation('FIELD')}
                   className={`py-1 text-xs rounded-lg font-medium transition ${
                     location === 'FIELD'
-                      ? 'bg-amber-600/30 text-amber-300 border border-amber-500/50'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Field
@@ -180,13 +180,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Priority
               </label>
               <select
                 value={priority}
                 onChange={e => setPriority(e.target.value as TaskPriority)}
-                className="w-full px-3 py-2 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
@@ -196,26 +196,40 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
             </div>
           </div>
 
-          {/* Tags */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-              Tags (comma separated)
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Backend, CSAR, Review"
-              value={tagsInput}
-              onChange={e => setTagsInput(e.target.value)}
-              className="w-full px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            />
+          {/* Due Date & Tags */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+                Due Date
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+                Tags (comma separated)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Backend, CSAR, Review"
+                value={tagsInput}
+                onChange={e => setTagsInput(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-neutral-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-neutral-400 hover:text-white transition"
+              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white transition"
             >
               Cancel
             </button>

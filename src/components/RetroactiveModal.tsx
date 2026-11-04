@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { TaskCategory, WorkLocation, TaskPriority } from '@/types';
 import { getTodayDateString } from '@/lib/time';
-import { X, Clock, Calendar, CheckCircle2 } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 
 interface RetroactiveModalProps {
   isOpen: boolean;
@@ -63,22 +63,22 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
   const durationHrs = calculateDurationHours();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-colors">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
               <Clock className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Log Past Work (Retroactive)</h2>
-              <p className="text-xs text-neutral-400">Record previously completed work intervals for accomplishment reports</p>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Log Past Work (Retroactive)</h2>
+              <p className="text-xs text-slate-500 dark:text-neutral-400">Record previously completed work intervals for accomplishment reports</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+            className="p-1 rounded-lg text-slate-400 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -88,8 +88,8 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-              Task Description <span className="text-red-400">*</span>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+              Task Description <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -98,14 +98,14 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
               placeholder="e.g. Manuscript Workshop Follow-up Email"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
             />
           </div>
 
           {/* Date, Start Time, End Time Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Date
               </label>
               <input
@@ -113,12 +113,12 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
                 required
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Start Time
               </label>
               <input
@@ -126,12 +126,12 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
                 required
                 value={startTime}
                 onChange={e => setStartTime(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 End Time
               </label>
               <input
@@ -139,27 +139,27 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
                 required
                 value={endTime}
                 onChange={e => setEndTime(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>
 
           {/* Computed Duration Banner */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-amber-950/30 border border-amber-900/40 text-xs">
-            <span className="text-amber-300 font-medium">Calculated Time Elapsed:</span>
-            <span className="font-mono text-sm font-bold text-amber-400">{durationHrs} Hours</span>
+          <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs">
+            <span className="text-amber-800 dark:text-amber-300 font-medium">Calculated Time Elapsed:</span>
+            <span className="font-mono text-sm font-bold text-amber-600 dark:text-amber-400">{durationHrs} Hours</span>
           </div>
 
-          {/* Project & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Project, Category & Priority */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Project
               </label>
               <select
                 value={projectId}
                 onChange={e => setProjectId(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               >
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>
@@ -170,13 +170,13 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Category
               </label>
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value as TaskCategory)}
-                className="w-full px-3 py-2 text-xs bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               >
                 <option value="PROGRAMMING">Programming</option>
                 <option value="ADMIN">Admin Task</option>
@@ -184,12 +184,28 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
                 <option value="OTHER">Other</option>
               </select>
             </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+                Priority
+              </label>
+              <select
+                value={priority}
+                onChange={e => setPriority(e.target.value as TaskPriority)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+              >
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
           </div>
 
           {/* Location & Completed checkbox */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1">
                 Location
               </label>
               <div className="flex items-center gap-1">
@@ -200,8 +216,8 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
                     onClick={() => setLocation(loc)}
                     className={`px-2.5 py-1 text-xs rounded-lg font-medium transition ${
                       location === loc
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                        : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                        ? 'bg-amber-600 text-white dark:bg-amber-500/20 dark:text-amber-300 dark:border dark:border-amber-500/40'
+                        : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800'
                     }`}
                   >
                     {loc}
@@ -215,18 +231,18 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
                 type="checkbox"
                 checked={markCompleted}
                 onChange={e => setMarkCompleted(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-500 focus:ring-0 bg-neutral-950 border-neutral-800"
+                className="w-4 h-4 rounded text-amber-500 focus:ring-0 bg-slate-100 dark:bg-neutral-950 border-slate-300 dark:border-neutral-800"
               />
-              <span className="text-xs text-neutral-300 font-medium">Mark as [DONE] immediately</span>
+              <span className="text-xs text-slate-700 dark:text-neutral-300 font-medium">Mark as [DONE] immediately</span>
             </label>
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-4 border-t border-neutral-800">
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-neutral-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-neutral-400 hover:text-white transition"
+              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white transition"
             >
               Cancel
             </button>

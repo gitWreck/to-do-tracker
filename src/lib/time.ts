@@ -54,3 +54,4 @@ export function calculateSecondsBetween(startIso: string, endIso: string): numbe
   if (isNaN(start) || isNaN(end) || end < start) return 0;
   return Math.floor((end - start) / 1000);
 }
+
