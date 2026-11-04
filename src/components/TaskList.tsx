@@ -240,7 +240,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
           ) : (
             <ListTodo className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           )}
-          <span>{isCompletedTab ? 'Completed Accomplishments' : 'Pending Tasks (With Date Dividers)'}</span>
+          <span>{isCompletedTab ? 'Completed Accomplishments' : 'Pending & Active Tasks'}</span>
         </div>
         <span>{filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}</span>
       </div>
