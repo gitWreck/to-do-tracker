@@ -41,13 +41,17 @@ export interface Project {
   isArchived: boolean;
 }
 
+export type ViewLayout = 'LIST' | 'GRID';
+export type NavigationTab = 'PENDING' | 'CALENDAR' | 'COMPLETED';
+
 export interface FilterState {
   searchQuery: string;
   selectedProjectId: string | 'ALL';
   selectedLocation: WorkLocation | 'ALL';
   selectedCategory: TaskCategory | 'ALL';
   selectedTag: string | 'ALL';
-  statusTab: 'PENDING' | 'COMPLETED' | 'ALL';
+  statusTab: NavigationTab;
+  layoutStyle: ViewLayout;
 }
 
 export interface ActiveTimerState {
@@ -56,4 +60,3 @@ export interface ActiveTimerState {
   startTime: number | null; // Milliseconds timestamp (Date.now())
   elapsedSeconds: number;
 }
-

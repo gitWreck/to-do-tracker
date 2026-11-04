@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { ActiveTaskDock } from '@/components/ActiveTaskDock';
 import { Sidebar } from '@/components/Sidebar';
 import { TaskList } from '@/components/TaskList';
+import { CalendarView } from '@/components/CalendarView';
 import { CreateTaskModal } from '@/components/CreateTaskModal';
 import { RetroactiveModal } from '@/components/RetroactiveModal';
 import { AccomplishmentReportModal } from '@/components/AccomplishmentReportModal';
@@ -12,9 +13,10 @@ import { openMiniWidgetPip, closeMiniWidgetPip, updateMiniWidgetPip, isDocumentP
 import { formatDuration } from '@/lib/time';
 
 function MainApp() {
-  const { activeTask, activeTimer, stopTimer, startTimer, toggleTaskComplete, projects } = useTasks();
+  const { activeTask, activeTimer, stopTimer, startTimer, toggleTaskComplete, projects, filters } = useTasks();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createPresetDate, setCreatePresetDate] = useState<string | undefined>(undefined);
   const [isRetroOpen, setIsRetroOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isMiniWidgetOpen, setIsMiniWidgetOpen] = useState(false);
@@ -119,6 +121,7 @@ function MainApp() {
       // Ctrl+N: New Task
       if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
         e.preventDefault();
+        setCreatePresetDate(undefined);
         setIsCreateOpen(true);
       }
       // Ctrl+L: Log past work
@@ -132,29 +135,51 @@ function MainApp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleTogglePip]);
 
+  const handleOpenCreateWithDate = (dateStr: string) => {
+    setCreatePresetDate(dateStr);
+    setIsCreateOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Dock Header (Phase 3) */}
       <ActiveTaskDock
-        onOpenCreateModal={() => setIsCreateOpen(true)}
+        onOpenCreateModal={() => {
+          setCreatePresetDate(undefined);
+          setIsCreateOpen(true);
+        }}
         onOpenRetroModal={() => setIsRetroOpen(true)}
         onOpenReportModal={() => setIsReportOpen(true)}
         onTogglePip={handleTogglePip}
         isPipActive={isPipActive}
       />
 
-      {/* Main Workspace: Sidebar + Task Board */}
+      {/* Main Workspace: Sidebar + Task Board / Calendar */}
       <div className="flex-1 flex overflow-hidden">
         <Sidebar />
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-neutral-950">
-          <TaskList onOpenCreateModal={() => setIsCreateOpen(true)} />
+          {filters.statusTab === 'CALENDAR' ? (
+            <CalendarView onOpenCreateWithDate={handleOpenCreateWithDate} />
+          ) : (
+            <TaskList
+              onOpenCreateModal={() => {
+                setCreatePresetDate(undefined);
+                setIsCreateOpen(true);
+              }}
+            />
+          )}
         </main>
       </div>
 
       {/* Modals & Overlays */}
       <CreateTaskModal
+        key={createPresetDate || 'new-task'}
         isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setCreatePresetDate(undefined);
+        }}
+        initialDate={createPresetDate}
       />
 
       <RetroactiveModal

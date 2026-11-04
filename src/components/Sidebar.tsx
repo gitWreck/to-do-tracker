@@ -5,6 +5,7 @@ import { exportBackupJSON } from '@/lib/storage';
 import {
   ListTodo,
   CheckCircle2,
+  Calendar,
   Building2,
   Home,
   Code2,
@@ -111,6 +112,23 @@ export const Sidebar: React.FC = () => {
               </div>
               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300">
                 {pendingCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setFilters(prev => ({ ...prev, statusTab: 'CALENDAR' }))}
+              className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl transition ${
+                filters.statusTab === 'CALENDAR'
+                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-600/20 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-semibold shadow-xs'
+                  : 'text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-900 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Calendar View</span>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300">
+                {tasks.length}
               </span>
             </button>
 

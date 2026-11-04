@@ -8,7 +8,9 @@ import {
   ListTodo,
   Calendar,
   Sparkles,
-  Inbox
+  Inbox,
+  LayoutList,
+  LayoutGrid
 } from 'lucide-react';
 
 interface TaskListProps {
@@ -44,6 +46,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
 
   // Group completed tasks by date if on completed tab
   const isCompletedTab = filters.statusTab === 'COMPLETED';
+  const isGrid = filters.layoutStyle === 'GRID';
 
   const groupedTasks = React.useMemo(() => {
     if (!isCompletedTab) return null;
@@ -65,7 +68,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
   }, [filteredTasks, isCompletedTab]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-5 max-w-4xl mx-auto w-full transition-colors">
+    <div className="flex-1 overflow-y-auto px-6 py-5 max-w-6xl mx-auto w-full transition-colors">
       {/* Top Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 mb-5">
         <div className="relative flex-1 w-full">
@@ -85,6 +88,34 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
               Clear
             </button>
           )}
+        </div>
+
+        {/* View Layout Toggle (List vs Grid/Card style) */}
+        <div className="flex items-center gap-1 bg-white dark:bg-neutral-900 p-1 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-xs flex-shrink-0">
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, layoutStyle: 'LIST' }))}
+            className={`p-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 ${
+              !isGrid
+                ? 'bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-white font-semibold'
+                : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="List View"
+          >
+            <LayoutList className="w-4 h-4" />
+            <span className="hidden sm:inline">List</span>
+          </button>
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, layoutStyle: 'GRID' }))}
+            className={`p-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 ${
+              isGrid
+                ? 'bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-white font-semibold'
+                : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            title="Card / Grid View"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">Cards</span>
+          </button>
         </div>
       </div>
 
@@ -132,7 +163,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
         <span>{filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}</span>
       </div>
 
-      {/* Tasks List */}
+      {/* Tasks List / Grid */}
       {filteredTasks.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-slate-300 dark:border-neutral-800 rounded-2xl bg-slate-50/50 dark:bg-neutral-900/20">
           <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-3 text-slate-400 dark:text-neutral-600">
@@ -156,12 +187,13 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
                 <span>{dateLabel}</span>
                 <span className="text-[11px] text-slate-400 dark:text-neutral-600">({tasksInDate.length})</span>
               </div>
-              <div className="space-y-2">
+              <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2'}>
                 {tasksInDate.map(task => (
                   <TaskCard
                     key={task.id}
                     task={task}
                     project={projectMap.get(task.projectId)}
+                    variant={isGrid ? 'grid' : 'list'}
                   />
                 ))}
               </div>
@@ -169,12 +201,13 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
           ))}
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2.5'}>
           {filteredTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
               project={projectMap.get(task.projectId)}
+              variant={isGrid ? 'grid' : 'list'}
             />
           ))}
         </div>

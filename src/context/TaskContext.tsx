@@ -56,7 +56,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     selectedCategory: 'ALL',
     selectedTag: 'ALL',
     statusTab: 'PENDING',
+    layoutStyle: (typeof localStorage !== 'undefined' && (localStorage.getItem('ticktick_view_layout') as 'LIST' | 'GRID')) || 'LIST',
   });
+
+  // Persist layout style
+  useEffect(() => {
+    try {
+      localStorage.setItem('ticktick_view_layout', filters.layoutStyle);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [filters.layoutStyle]);
 
   // Persist tasks and projects whenever they change
   useEffect(() => {
@@ -320,6 +330,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (task.status === 'COMPLETED' || task.status === 'ARCHIVED') return false;
       } else if (filters.statusTab === 'COMPLETED') {
         if (task.status !== 'COMPLETED') return false;
+      }
+      // In CALENDAR view, include both pending and completed tasks (omit archived)
+      else if (filters.statusTab === 'CALENDAR') {
+        if (task.status === 'ARCHIVED') return false;
       }
 
       // Project filter

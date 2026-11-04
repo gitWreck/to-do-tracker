@@ -7,9 +7,10 @@ import { X, Plus } from 'lucide-react';
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialDate?: string;
 }
 
-export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) => {
+export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, initialDate }) => {
   const { projects, createTask } = useTasks();
 
   const [title, setTitle] = useState('');
@@ -18,7 +19,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [category, setCategory] = useState<TaskCategory>('PROGRAMMING');
   const [location, setLocation] = useState<WorkLocation>('OFFICE');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
-  const [dueDate, setDueDate] = useState(getTodayDateString());
+  const [dueDate, setDueDate] = useState(initialDate || getTodayDateString());
   const [tagsInput, setTagsInput] = useState('');
 
   if (!isOpen) return null;
@@ -146,33 +147,30 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                 <button
                   type="button"
                   onClick={() => setLocation('OFFICE')}
-                  className={`py-1 text-xs rounded-lg font-medium transition ${
-                    location === 'OFFICE'
+                  className={`py-1 text-xs rounded-lg font-medium transition ${location === 'OFFICE'
                       ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50'
                       : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   Office
                 </button>
                 <button
                   type="button"
                   onClick={() => setLocation('HOME')}
-                  className={`py-1 text-xs rounded-lg font-medium transition ${
-                    location === 'HOME'
+                  className={`py-1 text-xs rounded-lg font-medium transition ${location === 'HOME'
                       ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50'
                       : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   Home
                 </button>
                 <button
                   type="button"
                   onClick={() => setLocation('FIELD')}
-                  className={`py-1 text-xs rounded-lg font-medium transition ${
-                    location === 'FIELD'
+                  className={`py-1 text-xs rounded-lg font-medium transition ${location === 'FIELD'
                       ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50'
                       : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   Field
                 </button>
