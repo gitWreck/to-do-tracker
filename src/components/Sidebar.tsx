@@ -15,6 +15,7 @@ import {
   Download,
   Plus,
   Hash,
+  CheckSquare,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -49,6 +50,19 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className="w-64 border-r border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col h-[calc(100vh-57px)] select-none transition-colors">
+      {/* Brand Header */}
+      <div className="p-4 pb-0">
+        <div className="flex items-center gap-2.5 px-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-800 shadow-xs">
+          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-xs flex-shrink-0">
+            <CheckSquare className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">DevTracker</h1>
+            <p className="text-[10px] text-slate-500 dark:text-neutral-400 font-medium truncate">Work & Time Tracker</p>
+          </div>
+        </div>
+      </div>
+
       <div className="p-4 flex-1 overflow-y-auto space-y-6">
         
         {/* Work Context Switcher (Phase 5: Office vs Home) */}

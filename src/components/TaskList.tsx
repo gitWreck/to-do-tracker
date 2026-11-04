@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { TaskCard } from './TaskCard';
+import { getDateGroupMeta, getTodayDateString } from '@/lib/time';
 import {
   Search,
   Plus,
@@ -10,7 +11,9 @@ import {
   Sparkles,
   Inbox,
   LayoutList,
-  LayoutGrid
+  LayoutGrid,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 interface TaskListProps {
@@ -28,7 +31,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
 
   const [quickTitle, setQuickTitle] = useState('');
 
-  const projectMap = new Map(projects.map(p => [p.id, p]));
+  const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,28 +47,107 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
     setQuickTitle('');
   };
 
-  // Group completed tasks by date if on completed tab
   const isCompletedTab = filters.statusTab === 'COMPLETED';
   const isGrid = filters.layoutStyle === 'GRID';
+  const todayStr = getTodayDateString();
 
-  const groupedTasks = React.useMemo(() => {
-    if (!isCompletedTab) return null;
+  // Group tasks by date for both PENDING/Today and COMPLETED History
+  const groupedSections = useMemo(() => {
+    if (isCompletedTab) {
+      // Completed history groups (grouped by completedAt date)
+      const groups: Record<
+        string,
+        {
+          label: string;
+          tasks: typeof filteredTasks;
+          badge?: string;
+          badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming';
+          sortOrder: number;
+        }
+      > = {};
 
-    const groups: Record<string, typeof filteredTasks> = {};
-    filteredTasks.forEach(task => {
-      const dateKey = task.completedAt
-        ? new Date(task.completedAt).toLocaleDateString([], {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
-        : 'Earlier';
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(task);
-    });
-    return groups;
-  }, [filteredTasks, isCompletedTab]);
+      filteredTasks.forEach(task => {
+        const dateKey = task.completedAt ? task.completedAt.split('T')[0] : 'Earlier';
+        if (!groups[dateKey]) {
+          const meta = getDateGroupMeta(dateKey);
+          groups[dateKey] = {
+            label: meta.label,
+            badge: meta.badge,
+            badgeType: meta.badgeType,
+            sortOrder: meta.sortOrder,
+            tasks: [],
+          };
+        }
+        groups[dateKey].tasks.push(task);
+      });
+
+      // Sort completed groups by date descending (most recent first)
+      return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+    } else {
+      // PENDING & Today groups (grouped by dueDate or createdAt)
+      const groups: Record<
+        string,
+        {
+          label: string;
+          tasks: typeof filteredTasks;
+          badge?: string;
+          badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming';
+          sortOrder: number;
+        }
+      > = {};
+
+      filteredTasks.forEach(task => {
+        const dateKey = task.dueDate || (task.createdAt ? task.createdAt.split('T')[0] : todayStr);
+        if (!groups[dateKey]) {
+          const meta = getDateGroupMeta(dateKey);
+          groups[dateKey] = {
+            label: meta.label,
+            badge: meta.badge,
+            badgeType: meta.badgeType,
+            sortOrder: meta.sortOrder,
+            tasks: [],
+          };
+        }
+        groups[dateKey].tasks.push(task);
+      });
+
+      // Sort pending groups:
+      // Overdue / Prior Days first (needs attention!), then Yesterday, then Today, then Upcoming
+      return Object.entries(groups).sort((a, b) => {
+        if (a[1].sortOrder !== b[1].sortOrder) {
+          return a[1].sortOrder - b[1].sortOrder;
+        }
+        // Within the same bucket, sort by date
+        return a[0].localeCompare(b[0]);
+      });
+    }
+  }, [filteredTasks, isCompletedTab, todayStr]);
+
+  const getSectionBadgeStyle = (badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming') => {
+    switch (badgeType) {
+      case 'overdue':
+        return 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800/80';
+      case 'yesterday':
+        return 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/60 dark:text-orange-400 dark:border-orange-800/80';
+      case 'today':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/80';
+      case 'upcoming':
+        return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800/80';
+    }
+  };
+
+  const getSectionIcon = (badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming') => {
+    switch (badgeType) {
+      case 'overdue':
+        return <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />;
+      case 'yesterday':
+        return <Clock className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />;
+      case 'today':
+        return <Calendar className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />;
+      case 'upcoming':
+        return <Calendar className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />;
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-5 max-w-6xl mx-auto w-full transition-colors">
@@ -151,19 +233,19 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
       )}
 
       {/* List Header */}
-      <div className="flex items-center justify-between mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+      <div className="flex items-center justify-between mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
         <div className="flex items-center gap-2">
           {isCompletedTab ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           ) : (
             <ListTodo className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           )}
-          <span>{isCompletedTab ? 'Completed Accomplishments' : 'Pending & Active Tasks'}</span>
+          <span>{isCompletedTab ? 'Completed Accomplishments' : 'Pending Tasks (With Date Dividers)'}</span>
         </div>
         <span>{filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}</span>
       </div>
 
-      {/* Tasks List / Grid */}
+      {/* Empty State */}
       {filteredTasks.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-slate-300 dark:border-neutral-800 rounded-2xl bg-slate-50/50 dark:bg-neutral-900/20">
           <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-3 text-slate-400 dark:text-neutral-600">
@@ -178,17 +260,38 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
               : 'Add your high-priority items above or start a stopwatch to begin your workday.'}
           </p>
         </div>
-      ) : isCompletedTab && groupedTasks ? (
-        <div className="space-y-6">
-          {Object.entries(groupedTasks).map(([dateLabel, tasksInDate]) => (
-            <div key={dateLabel} className="space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-neutral-400 pt-2 border-b border-slate-200 dark:border-neutral-800 pb-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500" />
-                <span>{dateLabel}</span>
-                <span className="text-[11px] text-slate-400 dark:text-neutral-600">({tasksInDate.length})</span>
+      ) : (
+        /* Date-Divided Sections (Both Pending & Completed) */
+        <div className="space-y-7">
+          {groupedSections.map(([dateKey, group]) => (
+            <div key={dateKey} className="space-y-3">
+              {/* Distinct Section Divider Header */}
+              <div className="flex items-center justify-between gap-3 pt-2 pb-1.5 border-b border-slate-200 dark:border-neutral-800/80">
+                <div className="flex items-center gap-2">
+                  {getSectionIcon(group.badgeType)}
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-neutral-200">
+                    {group.label}
+                  </h3>
+
+                  {group.badge && (
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${getSectionBadgeStyle(
+                        group.badgeType
+                      )}`}
+                    >
+                      {group.badge}
+                    </span>
+                  )}
+                </div>
+
+                <span className="text-[11px] font-medium text-slate-400 dark:text-neutral-500">
+                  {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+                </span>
               </div>
-              <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2'}>
-                {tasksInDate.map(task => (
+
+              {/* Task Items (List or Grid/Cards layout) */}
+              <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2.5'}>
+                {group.tasks.map(task => (
                   <TaskCard
                     key={task.id}
                     task={task}
@@ -198,17 +301,6 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2.5'}>
-          {filteredTasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              project={projectMap.get(task.projectId)}
-              variant={isGrid ? 'grid' : 'list'}
-            />
           ))}
         </div>
       )}

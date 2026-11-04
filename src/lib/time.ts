@@ -48,6 +48,15 @@ export function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+export function getYesterdayDateString(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function calculateSecondsBetween(startIso: string, endIso: string): number {
   const start = new Date(startIso).getTime();
   const end = new Date(endIso).getTime();
@@ -55,3 +64,75 @@ export function calculateSecondsBetween(startIso: string, endIso: string): numbe
   return Math.floor((end - start) / 1000);
 }
 
+export interface DateGroupMeta {
+  key: string;
+  label: string;
+  badge?: string;
+  badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming';
+  sortOrder: number; // For ordering: overdue first, then yesterday, today, upcoming
+}
+
+export function getDateGroupMeta(dateStr: string): DateGroupMeta {
+  const today = getTodayDateString();
+  const yesterday = getYesterdayDateString();
+
+  if (dateStr === today) {
+    const formatted = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    return {
+      key: dateStr,
+      label: `Today • ${formatted}`,
+      badge: 'Today',
+      badgeType: 'today',
+      sortOrder: 2,
+    };
+  }
+
+  if (dateStr === yesterday) {
+    const formatted = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    return {
+      key: dateStr,
+      label: `Yesterday • ${formatted}`,
+      badge: 'Carried Over',
+      badgeType: 'yesterday',
+      sortOrder: 1,
+    };
+  }
+
+  if (dateStr < today) {
+    const formatted = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    return {
+      key: dateStr,
+      label: formatted,
+      badge: 'Prior Days (Carried Over)',
+      badgeType: 'overdue',
+      sortOrder: 0,
+    };
+  }
+
+  // Future dates
+  const formatted = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  return {
+    key: dateStr,
+    label: formatted,
+    badge: 'Upcoming',
+    badgeType: 'upcoming',
+    sortOrder: 3,
+  };
+}

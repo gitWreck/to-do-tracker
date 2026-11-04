@@ -70,13 +70,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     selectedCategory: 'ALL',
     selectedTag: 'ALL',
     statusTab: 'PENDING',
-    layoutStyle: (typeof localStorage !== 'undefined' && (localStorage.getItem('ticktick_view_layout') as 'LIST' | 'GRID')) || 'LIST',
+    layoutStyle: (typeof localStorage !== 'undefined' && 
+      ((localStorage.getItem('devtracker_view_layout') || localStorage.getItem('ticktick_view_layout')) as 'LIST' | 'GRID')) || 'LIST',
   });
 
   // Persist layout style
   useEffect(() => {
     try {
-      localStorage.setItem('ticktick_view_layout', filters.layoutStyle);
+      localStorage.setItem('devtracker_view_layout', filters.layoutStyle);
     } catch {
       // Ignore storage errors
     }
