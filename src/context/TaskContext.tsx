@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Task, Project, ActiveTimerState, FilterState, TimeEntry } from '@/types';
+import { ToastInfo } from '@/components/Toast';
 import {
   loadTasks,
   saveTasks,
@@ -20,11 +21,21 @@ interface TaskContextType {
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   filteredTasks: Task[];
 
+  // Completion commit modal state
+  pendingCommitTask: Task | null;
+  requestTaskComplete: (taskId: string) => void;
+  commitTaskComplete: (taskId: string, options?: { note?: string; additionalSeconds?: number }) => void;
+  cancelTaskComplete: () => void;
+  toggleTaskComplete: (taskId: string) => void;
+
+  // Toast notifications
+  toast: ToastInfo | null;
+  dismissToast: () => void;
+
   // Actions
   startTimer: (taskId: string) => void;
   stopTimer: () => void;
   toggleTimer: (taskId: string) => void;
-  toggleTaskComplete: (taskId: string) => void;
   createTask: (data: Partial<Task> & { title: string }) => Task;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   deleteTask: (taskId: string) => void;
@@ -48,6 +59,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>(loadTasks);
   const [projects, setProjects] = useState<Project[]>(loadProjects);
   const [activeTimer, setActiveTimer] = useState<ActiveTimerState | null>(loadActiveTimer);
+
+  const [pendingCommitTaskId, setPendingCommitTaskId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastInfo | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
@@ -100,6 +114,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!activeTimer?.taskId) return null;
     return tasks.find(t => t.id === activeTimer.taskId) || null;
   }, [activeTimer, tasks]);
+
+  const pendingCommitTask = useMemo(() => {
+    if (!pendingCommitTaskId) return null;
+    return tasks.find(t => t.id === pendingCommitTaskId) || null;
+  }, [pendingCommitTaskId, tasks]);
+
+  // Toast dismiss timer
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const dismissToast = () => setToast(null);
 
   // Stop running timer and commit time entry to the task
   const stopTimer = () => {
@@ -179,43 +209,111 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const toggleTaskComplete = (taskId: string) => {
+  // Step 1: Prompt before marking done
+  const requestTaskComplete = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const willBeCompleted = task.status !== 'COMPLETED';
+    // If task is ALREADY completed, clicking checkbox reopens it immediately with an Undo toast
+    if (task.status === 'COMPLETED') {
+      const prevCompletedAt = task.completedAt;
+      setTasks(prev =>
+        prev.map(t => (t.id === taskId ? { ...t, status: 'PENDING', completedAt: undefined } : t))
+      );
+      setToast({
+        id: `reopen-${Date.now()}`,
+        message: `Reopened "${task.title}"`,
+        undoAction: () => {
+          setTasks(prev =>
+            prev.map(t => (t.id === taskId ? { ...t, status: 'COMPLETED', completedAt: prevCompletedAt } : t))
+          );
+        },
+      });
+      return;
+    }
 
-    // If active timer is on this task and we mark it complete, stop the timer first
+    // Otherwise, open the Commit Completion Modal!
+    setPendingCommitTaskId(taskId);
+  };
+
+  const cancelTaskComplete = () => {
+    setPendingCommitTaskId(null);
+  };
+
+  // Step 2: Confirmed commit of task completion
+  const commitTaskComplete = (taskId: string, options?: { note?: string; additionalSeconds?: number }) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // If active timer is on this task, stop the timer and commit it
     if (activeTimer?.taskId === taskId) {
       stopTimer();
     }
 
-    if (willBeCompleted) {
-      try {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.8 },
-          colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899'],
-        });
-      } catch {
-        // Safe fallback if canvas is unavailable
-      }
+    const previousTaskState = { ...task };
+    const nowIso = new Date().toISOString();
+    const dateStr = nowIso.split('T')[0];
+
+    const extraSeconds = options?.additionalSeconds || 0;
+    let updatedEntries = [...(task.timeEntries || [])];
+
+    if (extraSeconds > 0) {
+      const extraEntry: TimeEntry = {
+        id: `extra-entry-${Date.now()}`,
+        taskId,
+        startTime: nowIso,
+        endTime: nowIso,
+        durationSeconds: extraSeconds,
+        isManualEntry: true,
+        date: dateStr,
+      };
+      updatedEntries.push(extraEntry);
     }
+
+    const newTotalSeconds = (task.totalDurationSeconds || 0) + extraSeconds;
 
     setTasks(prev =>
       prev.map(t => {
         if (t.id === taskId) {
           return {
             ...t,
-            status: willBeCompleted ? 'COMPLETED' : 'PENDING',
-            completedAt: willBeCompleted ? new Date().toISOString() : undefined,
+            status: 'COMPLETED',
+            completedAt: nowIso,
+            completionNote: options?.note || t.completionNote,
+            timeEntries: updatedEntries,
+            totalDurationSeconds: newTotalSeconds,
           };
         }
         return t;
       })
     );
+
+    setPendingCommitTaskId(null);
+
+    // Celebratory Confetti!
+    try {
+      confetti({
+        particleCount: 60,
+        spread: 65,
+        origin: { y: 0.8 },
+        colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+      });
+    } catch {
+      // Safe fallback
+    }
+
+    // Set Undo Toast
+    setToast({
+      id: `complete-${Date.now()}`,
+      message: `Committed "${task.title}" as DONE!`,
+      undoAction: () => {
+        setTasks(prev => prev.map(t => (t.id === taskId ? previousTaskState : t)));
+      },
+    });
   };
+
+  // Keep toggleTaskComplete as an alias to requestTaskComplete so all existing controls show the prompt!
+  const toggleTaskComplete = requestTaskComplete;
 
   const createTask = (data: Partial<Task> & { title: string }): Task => {
     // Hashtag parser: e.g. "Fix API #CSAR #Backend"
@@ -256,10 +354,23 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteTask = (taskId: string) => {
+    const taskToDelete = tasks.find(t => t.id === taskId);
+    if (!taskToDelete) return;
+
     if (activeTimer?.taskId === taskId) {
       setActiveTimer(null);
     }
+
     setTasks(prev => prev.filter(t => t.id !== taskId));
+
+    // Toast with Undo action for deletion
+    setToast({
+      id: `delete-${Date.now()}`,
+      message: `Deleted "${taskToDelete.title}"`,
+      undoAction: () => {
+        setTasks(prev => [taskToDelete, ...prev]);
+      },
+    });
   };
 
   const addRetroactiveEntry = (data: {
@@ -281,7 +392,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const taskId = `task-${Date.now()}`;
     const entryId = `manual-entry-${Date.now()}`;
-    
+
     const newEntry: TimeEntry = {
       id: entryId,
       taskId,
@@ -309,6 +420,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setTasks(prev => [newTask, ...prev]);
+
+    setToast({
+      id: `retro-${Date.now()}`,
+      message: `Logged past work: "${data.title}"`,
+    });
   };
 
   const createProject = (name: string, color: string): Project => {
@@ -379,10 +495,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         filters,
         setFilters,
         filteredTasks,
+        pendingCommitTask,
+        requestTaskComplete,
+        commitTaskComplete,
+        cancelTaskComplete,
+        toggleTaskComplete,
+        toast,
+        dismissToast,
         startTimer,
         stopTimer,
         toggleTimer,
-        toggleTaskComplete,
         createTask,
         updateTask,
         deleteTask,

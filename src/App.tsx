@@ -8,12 +8,27 @@ import { CalendarView } from '@/components/CalendarView';
 import { CreateTaskModal } from '@/components/CreateTaskModal';
 import { RetroactiveModal } from '@/components/RetroactiveModal';
 import { AccomplishmentReportModal } from '@/components/AccomplishmentReportModal';
+import { CommitCompletionModal } from '@/components/CommitCompletionModal';
+import { Toast } from '@/components/Toast';
 import { MiniWidgetOverlay } from '@/components/MiniWidgetOverlay';
 import { openMiniWidgetPip, closeMiniWidgetPip, updateMiniWidgetPip, isDocumentPipSupported } from '@/lib/pip';
 import { formatDuration } from '@/lib/time';
 
 function MainApp() {
-  const { activeTask, activeTimer, stopTimer, startTimer, toggleTaskComplete, projects, filters } = useTasks();
+  const {
+    activeTask,
+    activeTimer,
+    stopTimer,
+    startTimer,
+    toggleTaskComplete,
+    projects,
+    filters,
+    pendingCommitTask,
+    cancelTaskComplete,
+    commitTaskComplete,
+    toast,
+    dismissToast,
+  } = useTasks();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createPresetDate, setCreatePresetDate] = useState<string | undefined>(undefined);
@@ -192,11 +207,26 @@ function MainApp() {
         onClose={() => setIsReportOpen(false)}
       />
 
+      {/* Commit Completion Prompt Modal */}
+      <CommitCompletionModal
+        key={pendingCommitTask?.id || 'commit-modal'}
+        task={pendingCommitTask}
+        project={projects.find(p => p.id === pendingCommitTask?.projectId)}
+        activeTimerSeconds={activeTimer?.taskId === pendingCommitTask?.id ? (activeTimer?.elapsedSeconds ?? 0) : 0}
+        isTimerRunningOnTask={activeTimer?.taskId === pendingCommitTask?.id}
+        isOpen={!!pendingCommitTask}
+        onClose={cancelTaskComplete}
+        onCommit={commitTaskComplete}
+      />
+
       <MiniWidgetOverlay
         isOpen={isMiniWidgetOpen}
         onClose={() => setIsMiniWidgetOpen(false)}
         onOpenPip={handleTogglePip}
       />
+
+      {/* Quality of life Undo Toast Notification */}
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 }

@@ -21,6 +21,8 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
     const projectName = projectMap.get(task.projectId) || 'General';
     const statusText = task.status === 'COMPLETED' ? 'DONE' : task.status;
 
+    const taskTitleWithNote = task.completionNote ? `${task.title} [Note: ${task.completionNote}]` : task.title;
+
     if (task.timeEntries && task.timeEntries.length > 0) {
       task.timeEntries.forEach(entry => {
         const rowDate = entry.date || (entry.startTime ? entry.startTime.split('T')[0] : '');
@@ -29,7 +31,7 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
           project: projectName,
           category: task.category,
           location: task.location,
-          task: task.title,
+          task: taskTitleWithNote,
           startTime: formatTimeOnly(entry.startTime),
           endTime: entry.endTime ? formatTimeOnly(entry.endTime) : 'In Progress',
           durationHrs: formatDecimalHours(entry.durationSeconds),
@@ -44,7 +46,7 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
         project: projectName,
         category: task.category,
         location: task.location,
-        task: task.title,
+        task: taskTitleWithNote,
         startTime: '--:--',
         endTime: '--:--',
         durationHrs: formatDecimalHours(task.totalDurationSeconds || 0),

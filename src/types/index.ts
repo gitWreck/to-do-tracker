@@ -28,6 +28,7 @@ export interface Task {
   createdAt: string;       // ISO Timestamp
   dueDate?: string;        // YYYY-MM-DD
   completedAt?: string;    // ISO Timestamp when marked DONE
+  completionNote?: string; // Summary of deliverables or accomplishments on completion
 
   // Time Tracking
   timeEntries: TimeEntry[];
