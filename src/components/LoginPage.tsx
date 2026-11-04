@@ -64,7 +64,7 @@ export const LoginPage: React.FC = () => {
                 <span>Access Restricted</span>
               </div>
               <p className="text-xs leading-relaxed text-rose-700 dark:text-rose-300">
-                You are currently signed in as <strong className="font-mono text-rose-950 dark:text-white">{user.email}</strong>. 
+                You are currently signed in as <strong className="font-mono text-rose-950 dark:text-white">{user.email || user.user_metadata?.email || 'Unknown'}</strong>. 
                 However, this private workspace is strictly locked to its designated owner.
               </p>
               {allowedEmail && (

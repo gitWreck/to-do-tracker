@@ -35,10 +35,11 @@ export default defineConfig(({ mode }) => {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     '';
 
-  const allowedEmail =
+  const allowedEmail = (
     env.VITE_ALLOWED_EMAIL ||
     process.env.VITE_ALLOWED_EMAIL ||
-    '';
+    ''
+  ).replace(/['"]/g, '').trim().toLowerCase();
 
   return {
     plugins: [
@@ -51,9 +52,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      ...(supabaseUrl ? { 'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl) } : {}),
-      ...(supabaseKey ? { 'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseKey) } : {}),
-      ...(supabaseKey ? { 'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(supabaseKey) } : {}),
+      ...(supabaseUrl ? { 'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl.replace(/['"]/g, '').trim()) } : {}),
+      ...(supabaseKey ? { 'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseKey.replace(/['"]/g, '').trim()) } : {}),
+      ...(supabaseKey ? { 'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(supabaseKey.replace(/['"]/g, '').trim()) } : {}),
       ...(allowedEmail ? { 'import.meta.env.VITE_ALLOWED_EMAIL': JSON.stringify(allowedEmail) } : {}),
     },
   };

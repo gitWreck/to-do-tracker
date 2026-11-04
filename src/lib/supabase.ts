@@ -11,8 +11,11 @@ export const isSupabaseConfigured = Boolean(
   !supabaseAnonKey.includes('your-publishable-key')
 );
 
-// Allowed email whitelist for single-user strict privacy
-export const ALLOWED_EMAIL = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)?.toLowerCase().trim();
+// Allowed email whitelist for single-user strict privacy (sanitizes quotes, whitespace, casing)
+export const ALLOWED_EMAIL = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)
+  ?.replace(/['"]/g, '')
+  ?.toLowerCase()
+  ?.trim();
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {

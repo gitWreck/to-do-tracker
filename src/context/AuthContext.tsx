@@ -52,7 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isOfflineMode) return true;
     if (!user) return false;
     if (!ALLOWED_EMAIL) return true; // If no whitelist configured, allow authenticated user
-    return user.email?.toLowerCase().trim() === ALLOWED_EMAIL;
+
+    const userEmail = (user.email || user.user_metadata?.email || '')
+      .replace(/['"]/g, '')
+      .toLowerCase()
+      .trim();
+
+    const targetEmail = ALLOWED_EMAIL.replace(/['"]/g, '').toLowerCase().trim();
+
+    return Boolean(userEmail && targetEmail && userEmail === targetEmail);
   }, [user, isOfflineMode]);
 
   const handleSignIn = async () => {
