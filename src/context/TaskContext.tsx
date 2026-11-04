@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { Task, Project, ActiveTimerState, FilterState, TimeEntry } from '@/types';
 import { ToastInfo } from '@/components/Toast';
 import {
@@ -9,6 +9,14 @@ import {
   loadActiveTimer,
   saveActiveTimer
 } from '@/lib/storage';
+import {
+  fetchUserDataFromCloud,
+  syncTaskToCloud,
+  deleteCloudTask,
+  syncProjectToCloud,
+  migrateLocalDataToCloud
+} from '@/lib/cloudSync';
+import { useAuth } from './AuthContext';
 import { getTodayDateString } from '@/lib/time';
 import confetti from 'canvas-confetti';
 
@@ -20,6 +28,7 @@ interface TaskContextType {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   filteredTasks: Task[];
+  isSyncing: boolean;
 
   // Completion commit modal state
   pendingCommitTask: Task | null;
@@ -56,6 +65,10 @@ interface TaskContextType {
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthorized, isOfflineMode } = useAuth();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const hasLoadedFromCloud = useRef(false);
+
   const [tasks, setTasks] = useState<Task[]>(loadTasks);
   const [projects, setProjects] = useState<Project[]>(loadProjects);
   const [activeTimer, setActiveTimer] = useState<ActiveTimerState | null>(loadActiveTimer);
@@ -73,6 +86,36 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     layoutStyle: (typeof localStorage !== 'undefined' && 
       ((localStorage.getItem('devtracker_view_layout') || localStorage.getItem('ticktick_view_layout')) as 'LIST' | 'GRID')) || 'LIST',
   });
+
+  // On cloud authentication, load data from Supabase (or migrate local to cloud on first setup)
+  useEffect(() => {
+    if (!user || !isAuthorized || isOfflineMode) return;
+    if (hasLoadedFromCloud.current) return;
+
+    const cancelledRef = { current: false };
+    setIsSyncing(true);
+
+    fetchUserDataFromCloud(user.id).then(async data => {
+      if (cancelledRef.current) return;
+      if (data && (data.tasks.length > 0 || data.projects.length > 0)) {
+        setProjects(data.projects);
+        setTasks(data.tasks);
+      } else {
+        // First-time sync: push local data to Supabase
+        const currentProjects = loadProjects();
+        const currentTasks = loadTasks();
+        if (currentProjects.length > 0 || currentTasks.length > 0) {
+          await migrateLocalDataToCloud(user.id, currentProjects, currentTasks);
+        }
+      }
+      hasLoadedFromCloud.current = true;
+      setIsSyncing(false);
+    });
+
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [user, isAuthorized, isOfflineMode]);
 
   // Persist layout style
   useEffect(() => {
@@ -162,12 +205,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (t.id === activeTimer.taskId) {
           const updatedEntries = [...(t.timeEntries || []), completedEntry];
           const newTotal = (t.totalDurationSeconds || 0) + durationSeconds;
-          return {
+          const updatedTask: Task = {
             ...t,
             timeEntries: updatedEntries,
             totalDurationSeconds: newTotal,
             status: t.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS',
           };
+          if (user && isAuthorized && !isOfflineMode) {
+            syncTaskToCloud(user.id, updatedTask);
+          }
+          return updatedTask;
         }
         return t;
       })
@@ -203,7 +250,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTasks(prev =>
       prev.map(t => {
         if (t.id === taskId && t.status === 'PENDING') {
-          return { ...t, status: 'IN_PROGRESS' };
+          const updated: Task = { ...t, status: 'IN_PROGRESS' };
+          if (user && isAuthorized && !isOfflineMode) {
+            syncTaskToCloud(user.id, updated);
+          }
+          return updated;
         }
         return t;
       })
@@ -226,16 +277,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // If task is ALREADY completed, clicking checkbox reopens it immediately with an Undo toast
     if (task.status === 'COMPLETED') {
       const prevCompletedAt = task.completedAt;
+      const reopenedTask: Task = { ...task, status: 'PENDING', completedAt: undefined };
       setTasks(prev =>
-        prev.map(t => (t.id === taskId ? { ...t, status: 'PENDING', completedAt: undefined } : t))
+        prev.map(t => (t.id === taskId ? reopenedTask : t))
       );
+      if (user && isAuthorized && !isOfflineMode) {
+        syncTaskToCloud(user.id, reopenedTask);
+      }
       setToast({
         id: `reopen-${Date.now()}`,
         message: `Reopened "${task.title}"`,
         undoAction: () => {
+          const revertedTask: Task = { ...task, status: 'COMPLETED', completedAt: prevCompletedAt };
           setTasks(prev =>
-            prev.map(t => (t.id === taskId ? { ...t, status: 'COMPLETED', completedAt: prevCompletedAt } : t))
+            prev.map(t => (t.id === taskId ? revertedTask : t))
           );
+          if (user && isAuthorized && !isOfflineMode) {
+            syncTaskToCloud(user.id, revertedTask);
+          }
         },
       });
       return;
@@ -280,22 +339,27 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const newTotalSeconds = (task.totalDurationSeconds || 0) + extraSeconds;
+    const completedTask: Task = {
+      ...task,
+      status: 'COMPLETED',
+      completedAt: nowIso,
+      completionNote: options?.note || task.completionNote,
+      timeEntries: updatedEntries,
+      totalDurationSeconds: newTotalSeconds,
+    };
 
     setTasks(prev =>
       prev.map(t => {
         if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'COMPLETED',
-            completedAt: nowIso,
-            completionNote: options?.note || t.completionNote,
-            timeEntries: updatedEntries,
-            totalDurationSeconds: newTotalSeconds,
-          };
+          return completedTask;
         }
         return t;
       })
     );
+
+    if (user && isAuthorized && !isOfflineMode) {
+      syncTaskToCloud(user.id, completedTask);
+    }
 
     setPendingCommitTaskId(null);
 
@@ -317,6 +381,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       message: `Committed "${task.title}" as DONE!`,
       undoAction: () => {
         setTasks(prev => prev.map(t => (t.id === taskId ? previousTaskState : t)));
+        if (user && isAuthorized && !isOfflineMode) {
+          syncTaskToCloud(user.id, previousTaskState);
+        }
       },
     });
   };
@@ -353,12 +420,26 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setTasks(prev => [newTask, ...prev]);
+
+    if (user && isAuthorized && !isOfflineMode) {
+      syncTaskToCloud(user.id, newTask);
+    }
+
     return newTask;
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
     setTasks(prev =>
-      prev.map(t => (t.id === taskId ? { ...t, ...updates } : t))
+      prev.map(t => {
+        if (t.id === taskId) {
+          const updated = { ...t, ...updates };
+          if (user && isAuthorized && !isOfflineMode) {
+            syncTaskToCloud(user.id, updated);
+          }
+          return updated;
+        }
+        return t;
+      })
     );
   };
 
@@ -372,12 +453,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setTasks(prev => prev.filter(t => t.id !== taskId));
 
+    if (user && isAuthorized && !isOfflineMode) {
+      deleteCloudTask(taskId);
+    }
+
     // Toast with Undo action for deletion
     setToast({
       id: `delete-${Date.now()}`,
       message: `Deleted "${taskToDelete.title}"`,
       undoAction: () => {
         setTasks(prev => [taskToDelete, ...prev]);
+        if (user && isAuthorized && !isOfflineMode) {
+          syncTaskToCloud(user.id, taskToDelete);
+        }
       },
     });
   };
@@ -430,6 +518,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setTasks(prev => [newTask, ...prev]);
 
+    if (user && isAuthorized && !isOfflineMode) {
+      syncTaskToCloud(user.id, newTask);
+    }
+
     setToast({
       id: `retro-${Date.now()}`,
       message: `Logged past work: "${data.title}"`,
@@ -444,6 +536,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isArchived: false,
     };
     setProjects(prev => [...prev, newProj]);
+
+    if (user && isAuthorized && !isOfflineMode) {
+      syncProjectToCloud(user.id, newProj);
+    }
+
     return newProj;
   };
 
@@ -504,6 +601,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         filters,
         setFilters,
         filteredTasks,
+        isSyncing,
         pendingCommitTask,
         requestTaskComplete,
         commitTaskComplete,

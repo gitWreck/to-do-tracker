@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TaskProvider, useTasks } from '@/context/TaskContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { LoginPage } from '@/components/LoginPage';
 import { ActiveTaskDock } from '@/components/ActiveTaskDock';
 import { Sidebar } from '@/components/Sidebar';
 import { TaskList } from '@/components/TaskList';
@@ -13,6 +15,7 @@ import { Toast } from '@/components/Toast';
 import { MiniWidgetOverlay } from '@/components/MiniWidgetOverlay';
 import { openMiniWidgetPip, closeMiniWidgetPip, updateMiniWidgetPip, isDocumentPipSupported } from '@/lib/pip';
 import { formatDuration } from '@/lib/time';
+import { CheckSquare } from 'lucide-react';
 
 function MainApp() {
   const {
@@ -231,12 +234,38 @@ function MainApp() {
   );
 }
 
+function AppGate() {
+  const { user, isLoading, isAuthorized, isOfflineMode } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-neutral-950 text-slate-900 dark:text-neutral-100">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white animate-pulse shadow-md shadow-indigo-500/20">
+            <CheckSquare className="w-5 h-5" />
+          </div>
+          <p className="text-xs font-medium text-slate-500 dark:text-neutral-400">Loading DevTracker...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not running in offline mode, enforce authentication & owner whitelist
+  if (!isOfflineMode && (!user || !isAuthorized)) {
+    return <LoginPage />;
+  }
+
+  return <MainApp />;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
-      <TaskProvider>
-        <MainApp />
-      </TaskProvider>
+      <AuthProvider>
+        <TaskProvider>
+          <AppGate />
+        </TaskProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

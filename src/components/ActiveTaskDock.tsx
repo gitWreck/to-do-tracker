@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 import { formatDuration, formatDurationCompact, getTodayDateString } from '@/lib/time';
 import {
   Square,
@@ -11,7 +12,13 @@ import {
   Clock,
   Flame,
   Sun,
-  Moon
+  Moon,
+  Cloud,
+  RefreshCw,
+  LogOut,
+  User as UserIcon,
+  ShieldCheck,
+  HardDrive
 } from 'lucide-react';
 
 interface ActiveTaskDockProps {
@@ -29,8 +36,10 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
   onTogglePip,
   isPipActive,
 }) => {
-  const { activeTask, activeTimer, stopTimer, toggleTaskComplete, projects, tasks } = useTasks();
+  const { activeTask, activeTimer, stopTimer, toggleTaskComplete, projects, tasks, isSyncing } = useTasks();
   const { isDark, toggleTheme } = useTheme();
+  const { user, isOfflineMode, setOfflineMode, signOut, isConfigured } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Project for active task
   const activeProject = projects.find(p => p.id === activeTask?.projectId);
@@ -53,6 +62,9 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
   if (activeTimer) {
     todayTotalSeconds += (activeTimer.sessionSeconds || 0);
   }
+
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userEmail = user?.email || '';
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-4 py-2.5 shadow-sm transition-colors">
@@ -125,6 +137,34 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
 
         {/* Right: Functional Action Buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Cloud Sync Status Indicator */}
+          {!isOfflineMode && user ? (
+            <div
+              title={isSyncing ? 'Syncing changes to Supabase...' : 'Synchronized with Supabase Cloud'}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300"
+            >
+              {isSyncing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
+                  <span className="text-indigo-600 dark:text-indigo-400">Syncing...</span>
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-slate-700 dark:text-neutral-300">Cloud Synced</span>
+                </>
+              )}
+            </div>
+          ) : (
+            <div
+              title="Running in Local Offline Storage"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300"
+            >
+              <HardDrive className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Local Offline</span>
+            </div>
+          )}
+
           {/* Theme Toggle (Light / Dark mode) */}
           <button
             onClick={toggleTheme}
@@ -176,6 +216,101 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
             <Plus className="w-4 h-4" />
             <span>New Task</span>
           </button>
+
+          {/* User Profile / Auth Button */}
+          <div className="relative ml-1">
+            <button
+              onClick={() => setShowProfileMenu(prev => !prev)}
+              title={user ? `Signed in as ${user.email}` : 'Account Settings'}
+              className="flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 transition"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={userEmail}
+                  className="w-6 h-6 rounded-lg object-cover ring-1 ring-slate-300 dark:ring-neutral-700"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
+                  {userEmail ? userEmail[0].toUpperCase() : <UserIcon className="w-3.5 h-3.5" />}
+                </div>
+              )}
+            </button>
+
+            {/* Profile Dropdown Popup */}
+            {showProfileMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowProfileMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xl p-3 z-50 text-xs">
+                  {user ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-neutral-800">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={userEmail}
+                            className="w-8 h-8 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">
+                            {userEmail[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-900 dark:text-white truncate">
+                            {user?.user_metadata?.full_name || 'Owner'}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate font-mono">
+                            {userEmail}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>Private Google-authenticated instance</span>
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          setShowProfileMenu(false);
+                          await signOut();
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-medium transition"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <div className="pb-2 border-b border-slate-100 dark:border-neutral-800">
+                        <p className="font-semibold text-slate-900 dark:text-white">Offline Mode</p>
+                        <p className="text-slate-500 dark:text-neutral-400 text-[11px] mt-0.5">
+                          Tasks and time are saved in local browser storage.
+                        </p>
+                      </div>
+                      {isConfigured && (
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            setOfflineMode(false);
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition"
+                        >
+                          <Cloud className="w-3.5 h-3.5" />
+                          <span>Connect to Google / Cloud</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>

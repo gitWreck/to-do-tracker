@@ -78,6 +78,70 @@ npm run build
 
 ---
 
+---
+
+## Cloud Sync, Vercel & Supabase Setup (Google Sign-In)
+
+DevTracker supports **private single-user cloud sync** using **Supabase** and **Google Sign-In**, deployable to **Vercel** with one click.
+
+### Security & Privacy Architecture
+- **Single-User Email Whitelist:** The environment variable `VITE_ALLOWED_EMAIL` enforces that only your specific Google account can sign in. Any other Google account will be rejected and automatically signed out.
+- **PostgreSQL Row-Level Security (RLS):** All tables (`projects`, `tasks`, `time_entries`) have RLS policies strictly isolating records by `auth.uid() = user_id`.
+- **Offline / Local Mode Fallback:** If Supabase credentials are not configured, DevTracker functions completely offline using browser local storage without crashing.
+
+---
+
+### Step 1: Create Supabase Project & Run Schema
+
+1. Go to [supabase.com](https://supabase.com) and create a new project.
+2. Open the **SQL Editor** in your Supabase dashboard (left sidebar -> `SQL Editor` -> `New Query`).
+3. Copy the contents of [`supabase_schema.sql`](./supabase_schema.sql) in this repository, paste it into the editor, and click **Run**.
+4. Go to **Project Settings** -> **API** and copy:
+   - **Project URL** (`https://<project-id>.supabase.co`)
+   - **Project API Anon Key** (`anon` `public`)
+
+---
+
+### Step 2: Configure Google OAuth in Google Cloud Console
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Create a project (or select an existing one) and navigate to **APIs & Services** -> **Credentials**.
+3. Click **Create Credentials** -> **OAuth client ID**.
+4. Choose **Web application**.
+5. Under **Authorized redirect URIs**, add your Supabase Auth callback URL:
+   ```
+   https://<your-supabase-project-id>.supabase.co/auth/v1/callback
+   ```
+6. Click **Create** and copy your **Client ID** and **Client Secret**.
+7. Return to your **Supabase Dashboard** -> **Authentication** -> **Providers** -> **Google**:
+   - Turn Google **ON**.
+   - Paste your **Client ID** and **Client Secret**.
+   - Click **Save**.
+
+---
+
+### Step 3: Deploy to Vercel
+
+1. Push this repository to GitHub or GitLab:
+   ```bash
+   git add .
+   git commit -m "feat: add supabase cloud sync with google sign in and vercel config"
+   git push origin master
+   ```
+2. Go to [vercel.com](https://vercel.com) -> **Add New Project** -> Import your repository.
+3. Under **Environment Variables**, add the following 3 variables:
+   - `VITE_SUPABASE_URL`: Your Supabase Project URL (`https://<project-id>.supabase.co`)
+   - `VITE_SUPABASE_ANON_KEY`: Your Supabase public anon key
+   - `VITE_ALLOWED_EMAIL`: Your personal Google email (`your.name@gmail.com`)
+4. Click **Deploy**!
+5. In your Supabase dashboard -> **Authentication** -> **URL Configuration**:
+   - Set **Site URL** to your Vercel deployment domain (e.g., `https://your-devtracker.vercel.app`).
+   - Add `https://your-devtracker.vercel.app/**` under **Redirect URLs**.
+
+You can now open DevTracker from any computer, tablet, or phone, click **Continue with Google**, and have your stopwatches, tasks, and accomplishment reports synchronized in real-time — with only your account permitted to access it!
+
+---
+
 ## Desktop Packaging (Tauri v2)
 This Vite React application is 100% Tauri-ready. When Rust and C++ build tools are installed on your machine, package it into a standalone Windows `.exe` with:
 ```bash

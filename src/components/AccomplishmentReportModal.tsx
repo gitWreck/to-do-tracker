@@ -36,9 +36,9 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
 
   // Filter rows
   const filteredRows = useMemo(() => {
-    const today = new Date();
-    const cutoff7Days = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).toISOString().split('T')[0];
-    const cutoff30Days = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30).toISOString().split('T')[0];
+    const nowMs = Date.now();
+    const cutoff7Days = new Date(nowMs - 7 * 86400000).toISOString().split('T')[0];
+    const cutoff30Days = new Date(nowMs - 30 * 86400000).toISOString().split('T')[0];
 
     return allRows.filter(row => {
       // Project filter
