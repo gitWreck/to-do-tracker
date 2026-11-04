@@ -4,7 +4,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { CheckSquare, ShieldAlert, LogOut, Sun, Moon, HardDrive, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { user, isAuthorized, allowedEmail, signInWithGoogle, signOut, setOfflineMode } = useAuth();
+  const { user, isAuthorized, signInWithGoogle, signOut, setOfflineMode } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -65,13 +65,8 @@ export const LoginPage: React.FC = () => {
               </div>
               <p className="text-xs leading-relaxed text-rose-700 dark:text-rose-300">
                 You are currently signed in as <strong className="font-mono text-rose-950 dark:text-white">{user.email || user.user_metadata?.email || 'Unknown'}</strong>. 
-                However, this private workspace is strictly locked to its designated owner.
+                This workspace is private and restricted to the authorized owner.
               </p>
-              {allowedEmail && (
-                <div className="mt-2.5 pt-2.5 border-t border-rose-200 dark:border-rose-900/60 text-xs">
-                  Authorized Owner: <span className="font-mono font-medium">{allowedEmail}</span>
-                </div>
-              )}
             </div>
 
             <button

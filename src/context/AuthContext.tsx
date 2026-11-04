@@ -8,7 +8,6 @@ interface AuthContextType {
   isLoading: boolean;
   isConfigured: boolean;
   isAuthorized: boolean;
-  allowedEmail: string | undefined;
   isOfflineMode: boolean;
   setOfflineMode: (offline: boolean) => void;
   signInWithGoogle: () => Promise<void>;
@@ -81,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isConfigured: isSupabaseConfigured,
         isAuthorized,
-        allowedEmail: ALLOWED_EMAIL,
         isOfflineMode,
         setOfflineMode: setIsOfflineMode,
         signInWithGoogle: handleSignIn,
