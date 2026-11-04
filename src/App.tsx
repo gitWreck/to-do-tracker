@@ -11,6 +11,7 @@ import { CreateTaskModal } from '@/components/CreateTaskModal';
 import { RetroactiveModal } from '@/components/RetroactiveModal';
 import { AccomplishmentReportModal } from '@/components/AccomplishmentReportModal';
 import { CommitCompletionModal } from '@/components/CommitCompletionModal';
+import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
 import { Toast } from '@/components/Toast';
 import { MiniWidgetOverlay } from '@/components/MiniWidgetOverlay';
 import { openMiniWidgetPip, closeMiniWidgetPip, updateMiniWidgetPip, isDocumentPipSupported } from '@/lib/pip';
@@ -29,6 +30,10 @@ function MainApp() {
     pendingCommitTask,
     cancelTaskComplete,
     commitTaskComplete,
+    pendingDeleteTask,
+    cancelTaskDelete,
+    confirmPermanentDelete,
+    archiveTask,
     toast,
     dismissToast,
   } = useTasks();
@@ -220,6 +225,16 @@ function MainApp() {
         isOpen={!!pendingCommitTask}
         onClose={cancelTaskComplete}
         onCommit={commitTaskComplete}
+      />
+
+      {/* Delete Confirmation Prompt Modal */}
+      <DeleteConfirmationModal
+        key={pendingDeleteTask?.id || 'delete-modal'}
+        task={pendingDeleteTask}
+        isOpen={!!pendingDeleteTask}
+        onClose={cancelTaskDelete}
+        onConfirmPermanentDelete={confirmPermanentDelete}
+        onArchive={archiveTask}
       />
 
       <MiniWidgetOverlay

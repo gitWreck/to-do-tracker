@@ -37,6 +37,13 @@ interface TaskContextType {
   cancelTaskComplete: () => void;
   toggleTaskComplete: (taskId: string) => void;
 
+  // Delete confirmation modal state
+  pendingDeleteTask: Task | null;
+  requestTaskDelete: (taskId: string) => void;
+  confirmPermanentDelete: (taskId: string) => void;
+  cancelTaskDelete: () => void;
+  archiveTask: (taskId: string) => void;
+
   // Toast notifications
   toast: ToastInfo | null;
   dismissToast: () => void;
@@ -74,6 +81,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeTimer, setActiveTimer] = useState<ActiveTimerState | null>(loadActiveTimer);
 
   const [pendingCommitTaskId, setPendingCommitTaskId] = useState<string | null>(null);
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastInfo | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
@@ -168,6 +176,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!pendingCommitTaskId) return null;
     return tasks.find(t => t.id === pendingCommitTaskId) || null;
   }, [pendingCommitTaskId, tasks]);
+
+  const pendingDeleteTask = useMemo(() => {
+    if (!pendingDeleteTaskId) return null;
+    return tasks.find(t => t.id === pendingDeleteTaskId) || null;
+  }, [pendingDeleteTaskId, tasks]);
 
   // Toast dismiss timer
   useEffect(() => {
@@ -443,7 +456,47 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  const deleteTask = (taskId: string) => {
+  // Request delete prompt modal
+  const requestTaskDelete = (taskId: string) => {
+    setPendingDeleteTaskId(taskId);
+  };
+
+  const cancelTaskDelete = () => {
+    setPendingDeleteTaskId(null);
+  };
+
+  // Archive task: remove from active board but keep hours intact for reports
+  const archiveTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (activeTimer?.taskId === taskId) {
+      stopTimer();
+    }
+
+    const archivedTask: Task = { ...task, status: 'ARCHIVED' };
+    setTasks(prev => prev.map(t => (t.id === taskId ? archivedTask : t)));
+
+    if (user && isAuthorized && !isOfflineMode) {
+      syncTaskToCloud(user.id, archivedTask);
+    }
+
+    setPendingDeleteTaskId(null);
+
+    setToast({
+      id: `archive-${Date.now()}`,
+      message: `Archived "${task.title}" (hours preserved)`,
+      undoAction: () => {
+        setTasks(prev => prev.map(t => (t.id === taskId ? task : t)));
+        if (user && isAuthorized && !isOfflineMode) {
+          syncTaskToCloud(user.id, task);
+        }
+      },
+    });
+  };
+
+  // Confirm permanent deletion from local & Supabase database
+  const confirmPermanentDelete = (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
     if (!taskToDelete) return;
 
@@ -457,10 +510,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteCloudTask(taskId);
     }
 
+    setPendingDeleteTaskId(null);
+
     // Toast with Undo action for deletion
     setToast({
       id: `delete-${Date.now()}`,
-      message: `Deleted "${taskToDelete.title}"`,
+      message: `Permanently deleted "${taskToDelete.title}"`,
       undoAction: () => {
         setTasks(prev => [taskToDelete, ...prev]);
         if (user && isAuthorized && !isOfflineMode) {
@@ -469,6 +524,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
   };
+
+  // Alias deleteTask to requestTaskDelete so all UI buttons trigger the prompt modal!
+  const deleteTask = requestTaskDelete;
 
   const addRetroactiveEntry = (data: {
     title: string;
@@ -607,6 +665,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         commitTaskComplete,
         cancelTaskComplete,
         toggleTaskComplete,
+        pendingDeleteTask,
+        requestTaskDelete,
+        confirmPermanentDelete,
+        cancelTaskDelete,
+        archiveTask,
         toast,
         dismissToast,
         startTimer,
