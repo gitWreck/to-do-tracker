@@ -112,11 +112,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   const CheckboxIcon = (
     <button
       onClick={() => toggleTaskComplete(task.id)}
-      className={`relative group/check flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-150 flex-shrink-0 cursor-pointer shadow-2xs ${
-        isCompleted
+      className={`relative group/check flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-150 flex-shrink-0 cursor-pointer shadow-2xs ${isCompleted
           ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs shadow-emerald-500/25 scale-100'
           : 'border-slate-300 dark:border-neutral-700 hover:border-emerald-500 dark:hover:border-emerald-400 bg-white dark:bg-neutral-900 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30'
-      }`}
+        }`}
       title={isCompleted ? 'Click to reopen task' : 'Mark as completed (Review & Commit)'}
     >
       {isCompleted ? (
@@ -206,13 +205,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   if (variant === 'grid') {
     return (
       <div
-        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${
-          isCurrentTaskRunning
+        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${isCurrentTaskRunning
             ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
             : isCompleted
-            ? 'bg-slate-50/80 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
-            : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/70 dark:hover:bg-neutral-900/95 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
-        }`}
+              ? 'bg-slate-50/80 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
+              : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/70 dark:hover:bg-neutral-900/95 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
+          }`}
       >
         {/* Left vertical color accent border */}
         <div
@@ -280,11 +278,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
               ) : (
                 <h4
                   onDoubleClick={() => setIsEditingTitle(true)}
-                  className={`text-sm font-semibold leading-snug cursor-pointer select-text ${
-                    isCompleted
+                  className={`text-sm font-semibold leading-snug cursor-pointer select-text ${isCompleted
                       ? 'line-through text-slate-400 dark:text-neutral-500'
                       : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
-                  }`}
+                    }`}
                 >
                   {task.title}
                 </h4>
@@ -337,13 +334,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   // -------------------------------------------------------------
   return (
     <div
-      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${
-        isCurrentTaskRunning
+      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${isCurrentTaskRunning
           ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
           : isCompleted
-          ? 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
-          : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/90 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
-      }`}
+            ? 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
+            : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/90 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
+        }`}
     >
       {/* Left vertical color accent bar */}
       <div
@@ -405,11 +401,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <div className="flex items-center gap-2">
               <span
                 onDoubleClick={() => setIsEditingTitle(true)}
-                className={`text-sm font-semibold leading-snug cursor-pointer select-text truncate ${
-                  isCompleted
+                className={`text-sm font-semibold leading-snug cursor-pointer select-text truncate ${isCompleted
                     ? 'line-through text-slate-400 dark:text-neutral-500'
                     : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
-                }`}
+                  }`}
                 title={task.title}
               >
                 {task.title}

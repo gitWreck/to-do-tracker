@@ -21,16 +21,17 @@ Use this checklist to track and select upcoming enhancements for **DevTracker**.
 
 ---
 
-## ⚡ 2. Real-Time Multi-Device Sync & Offline Resilience
+## ⚡ 2. Real-Time Multi-Device Sync & Offline Resilience (Completed ✅)
 
-- [ ] **Supabase Realtime Cross-Device Synchronization**
-  - Subscribe to Supabase Realtime broadcast/postgres channels (`supabase.channel('public:tasks')`).
-  - When you create, edit, or mark a task done on your phone, your desktop updates immediately in real-time without needing to refresh the page.
-  - Real-time dock synchronization: if a timer is active on one device, other open devices reflect the running status.
+- [x] **Supabase Realtime Cross-Device Synchronization**
+  - Subscribed to Supabase Realtime WebSocket broadcast channels (`devtracker_sync_${userId}`) with per-device session isolation (`DEVICE_ID`) and fallback PostgreSQL change listeners.
+  - When you create, edit, archive, or complete a task on your phone, desktop and laptop tabs reflect the update immediately in real-time without refreshing.
+  - Cross-device dock timer sync: starting a task timer on desktop displays and ticks in real-time on your phone dock (and vice versa); stopping on one device commits the entry and stops on all devices.
 
-- [ ] **Offline Mutation Queue (IndexedDB Fallback)**
-  - If you take actions while offline (e.g. flight, underground train, dead zone), actions queue locally in storage.
-  - Once connection is restored (`window.addEventListener('online')`), automatically flush and sync pending changes to Supabase in the background.
+- [x] **Offline Mutation Queue & Auto-Flush on Reconnect**
+  - Local mutation queue (`devtracker_offline_queue_v1`) stores pending task upserts, deletes, and project modifications if network drops (offline mode, airplane, subway, dead zone).
+  - Listens to browser `online` and `visibilitychange` events to automatically flush queued mutations in the background and pull latest cloud changes when foregrounded.
+  - Reactive sync pill in `ActiveTaskDock`: shows `Live Sync` with active pulse dot when connected, `Offline (N queued)` badge when offline, and `Syncing...` during queue flushes. Tap pill to trigger an immediate verification & manual flush.
 
 ---
 

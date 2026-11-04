@@ -1,10 +1,189 @@
 import { supabase } from './supabase';
-import { Task, Project, TimeEntry } from '@/types';
+import { Task, Project, TimeEntry, ActiveTimerState } from '@/types';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface CloudData {
   projects: Project[];
   tasks: Task[];
 }
+
+export interface QueuedMutation {
+  id: string;
+  timestamp: number;
+  type: 'UPSERT_TASK' | 'DELETE_TASK' | 'UPSERT_PROJECT';
+  userId: string;
+  payload: any;
+}
+
+const OFFLINE_QUEUE_KEY = 'devtracker_offline_queue_v1';
+
+function getDeviceId(): string {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      let id = sessionStorage.getItem('devtracker_device_id');
+      if (!id) {
+        id = `dev-${Math.random().toString(36).substring(2, 9)}`;
+        sessionStorage.setItem('devtracker_device_id', id);
+      }
+      return id;
+    }
+  } catch {
+    // ignore storage access restrictions
+  }
+  return `dev-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+const DEVICE_ID = getDeviceId();
+
+// ------------------------------------------------------------------
+// OFFLINE MUTATION QUEUE
+// ------------------------------------------------------------------
+
+export function getOfflineQueue(): QueuedMutation[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveOfflineQueue(queue: QueuedMutation[]): void {
+  try {
+    if (queue.length === 0) {
+      localStorage.removeItem(OFFLINE_QUEUE_KEY);
+    } else {
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('devtracker:queue_change', { detail: queue.length }));
+    }
+  } catch (err) {
+    console.warn('Failed to save offline queue:', err);
+  }
+}
+
+export function enqueueMutation(
+  userId: string,
+  type: QueuedMutation['type'],
+  payload: any
+): void {
+  const current = getOfflineQueue();
+  // If mutation for same task/project already queued, replace it
+  const filtered = current.filter(m => {
+    if (type === 'UPSERT_TASK' || type === 'DELETE_TASK') {
+      const targetId = type === 'DELETE_TASK' ? payload : payload.id;
+      const currentTargetId = m.type === 'DELETE_TASK' ? m.payload : m.payload?.id;
+      return currentTargetId !== targetId;
+    }
+    if (type === 'UPSERT_PROJECT') {
+      return m.payload?.id !== payload.id;
+    }
+    return true;
+  });
+
+  const newMutation: QueuedMutation = {
+    id: `mutation-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    timestamp: Date.now(),
+    type,
+    userId,
+    payload,
+  };
+
+  saveOfflineQueue([...filtered, newMutation]);
+}
+
+let isFlushingQueue = false;
+
+export async function flushOfflineQueue(): Promise<{ flushed: number; remaining: number }> {
+  if (isFlushingQueue) {
+    return { flushed: 0, remaining: getOfflineQueue().length };
+  }
+  if (!supabase || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+    return { flushed: 0, remaining: getOfflineQueue().length };
+  }
+
+  const queue = getOfflineQueue();
+  if (queue.length === 0) return { flushed: 0, remaining: 0 };
+
+  isFlushingQueue = true;
+  let flushedCount = 0;
+  const remaining: QueuedMutation[] = [];
+
+  try {
+    for (const item of queue) {
+      try {
+        if (item.type === 'UPSERT_TASK') {
+          const task: Task = item.payload;
+          const { error } = await supabase.from('tasks').upsert({
+            id: task.id,
+            user_id: item.userId,
+            project_id: task.projectId || null,
+            title: task.title,
+            description: task.description || null,
+            category: task.category,
+            location: task.location,
+            priority: task.priority,
+            status: task.status,
+            tags: task.tags || [],
+            due_date: task.dueDate || null,
+            created_at: task.createdAt,
+            completed_at: task.completedAt || null,
+            completion_note: task.completionNote || null,
+            total_duration_seconds: task.totalDurationSeconds || 0,
+          });
+          if (error) throw error;
+
+          if (task.timeEntries && task.timeEntries.length > 0) {
+            const entryPayload = task.timeEntries.map(e => ({
+              id: e.id,
+              user_id: item.userId,
+              task_id: task.id,
+              start_time: e.startTime,
+              end_time: e.endTime || null,
+              duration_seconds: e.durationSeconds,
+              is_manual_entry: e.isManualEntry,
+              date: e.date,
+            }));
+            await supabase.from('time_entries').upsert(entryPayload);
+          }
+          flushedCount++;
+        } else if (item.type === 'DELETE_TASK') {
+          const taskId: string = item.payload;
+          // Delete foreign-key child entries first to prevent FK violation
+          await supabase.from('time_entries').delete().eq('task_id', taskId);
+          const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+          if (error) throw error;
+          flushedCount++;
+        } else if (item.type === 'UPSERT_PROJECT') {
+          const project: Project = item.payload;
+          const { error } = await supabase.from('projects').upsert({
+            id: project.id,
+            user_id: item.userId,
+            name: project.name,
+            color: project.color,
+            is_archived: project.isArchived,
+          });
+          if (error) throw error;
+          flushedCount++;
+        }
+      } catch (err) {
+        console.warn('Could not flush queued mutation, retaining:', err);
+        remaining.push(item);
+      }
+    }
+  } finally {
+    saveOfflineQueue(remaining);
+    isFlushingQueue = false;
+  }
+
+  return { flushed: flushedCount, remaining: remaining.length };
+}
+
+// ------------------------------------------------------------------
+// DATA FETCHING & SYNCHRONIZATION
+// ------------------------------------------------------------------
 
 export async function fetchUserDataFromCloud(userId: string): Promise<CloudData | null> {
   if (!supabase) return null;
@@ -99,6 +278,15 @@ export async function fetchUserDataFromCloud(userId: string): Promise<CloudData 
 
 // Upsert a task and its time entries to Supabase
 export async function syncTaskToCloud(userId: string, task: Task): Promise<void> {
+  // Broadcast update immediately to other tabs/devices
+  broadcastTaskChange(userId, task);
+
+  // If currently offline, queue it immediately
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    enqueueMutation(userId, 'UPSERT_TASK', task);
+    return;
+  }
+
   if (!supabase) return;
 
   try {
@@ -121,11 +309,11 @@ export async function syncTaskToCloud(userId: string, task: Task): Promise<void>
     });
 
     if (taskError) {
-      console.error('Error syncing task to Supabase:', taskError);
+      console.warn('Network error syncing task to Supabase, queuing mutation:', taskError);
+      enqueueMutation(userId, 'UPSERT_TASK', task);
       return;
     }
 
-    // Upsert any time entries that exist on the task
     if (task.timeEntries && task.timeEntries.length > 0) {
       const entryPayload = task.timeEntries.map(e => ({
         id: e.id,
@@ -140,27 +328,47 @@ export async function syncTaskToCloud(userId: string, task: Task): Promise<void>
 
       const { error: entryError } = await supabase.from('time_entries').upsert(entryPayload);
       if (entryError) {
-        console.error('Error syncing time entries to Supabase:', entryError);
+        console.warn('Network error syncing entries to Supabase:', entryError);
       }
     }
-  } catch (err) {
-    console.error('Failed to sync task:', err);
+
+    // Flush any pending items if network is healthy
+    flushOfflineQueue();
+  } catch {
+    enqueueMutation(userId, 'UPSERT_TASK', task);
   }
 }
 
 // Delete task from Supabase
-export async function deleteCloudTask(taskId: string): Promise<void> {
+export async function deleteCloudTask(userId: string, taskId: string): Promise<void> {
+  broadcastTaskDelete(userId, taskId);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    enqueueMutation(userId, 'DELETE_TASK', taskId);
+    return;
+  }
+
   if (!supabase) return;
   try {
+    await supabase.from('time_entries').delete().eq('task_id', taskId);
     const { error } = await supabase.from('tasks').delete().eq('id', taskId);
-    if (error) console.error('Error deleting task from Supabase:', error);
-  } catch (err) {
-    console.error('Failed to delete cloud task:', err);
+    if (error) {
+      enqueueMutation(userId, 'DELETE_TASK', taskId);
+    }
+  } catch {
+    enqueueMutation(userId, 'DELETE_TASK', taskId);
   }
 }
 
 // Upsert a project to Supabase
 export async function syncProjectToCloud(userId: string, project: Project): Promise<void> {
+  broadcastProjectChange(userId, project);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    enqueueMutation(userId, 'UPSERT_PROJECT', project);
+    return;
+  }
+
   if (!supabase) return;
   try {
     const { error } = await supabase.from('projects').upsert({
@@ -170,9 +378,11 @@ export async function syncProjectToCloud(userId: string, project: Project): Prom
       color: project.color,
       is_archived: project.isArchived,
     });
-    if (error) console.error('Error syncing project to Supabase:', error);
-  } catch (err) {
-    console.error('Failed to sync project:', err);
+    if (error) {
+      enqueueMutation(userId, 'UPSERT_PROJECT', project);
+    }
+  } catch {
+    enqueueMutation(userId, 'UPSERT_PROJECT', project);
   }
 }
 
@@ -185,7 +395,6 @@ export async function migrateLocalDataToCloud(
   if (!supabase) return false;
 
   try {
-    // 1. Projects
     if (projects.length > 0) {
       const projPayload = projects.map(p => ({
         id: p.id,
@@ -198,7 +407,6 @@ export async function migrateLocalDataToCloud(
       if (pErr) throw pErr;
     }
 
-    // 2. Tasks
     if (tasks.length > 0) {
       const taskPayload = tasks.map(t => ({
         id: t.id,
@@ -220,7 +428,6 @@ export async function migrateLocalDataToCloud(
       const { error: tErr } = await supabase.from('tasks').upsert(taskPayload);
       if (tErr) throw tErr;
 
-      // 3. Time entries
       const allEntries = tasks.flatMap(t =>
         (t.timeEntries || []).map(e => ({
           id: e.id,
@@ -247,3 +454,130 @@ export async function migrateLocalDataToCloud(
   }
 }
 
+// ------------------------------------------------------------------
+// SUPABASE REALTIME MULTI-DEVICE SYNCHRONIZATION
+// ------------------------------------------------------------------
+
+let activeSyncChannel: RealtimeChannel | null = null;
+
+export function initRealtimeSync(
+  userId: string,
+  callbacks: {
+    onTaskUpsert: (task: Task) => void;
+    onTaskDelete: (taskId: string) => void;
+    onProjectUpsert: (project: Project) => void;
+    onTimerBroadcast: (timerState: ActiveTimerState | null) => void;
+    onRefreshRequested: () => void;
+  }
+): () => void {
+  if (!supabase) return () => {};
+
+  // Clean up any existing channel before subscribing
+  if (activeSyncChannel) {
+    supabase.removeChannel(activeSyncChannel);
+    activeSyncChannel = null;
+  }
+
+  const channelName = `devtracker_sync_${userId}`;
+  const channel = supabase.channel(channelName, {
+    config: {
+      broadcast: { self: false },
+    },
+  });
+
+  // 1. Instant WebSocket Broadcasts across devices
+  channel
+    .on('broadcast', { event: 'timer_state' }, ({ payload }) => {
+      if (payload?.originDeviceId === DEVICE_ID) return;
+      callbacks.onTimerBroadcast(payload?.timerState ?? null);
+    })
+    .on('broadcast', { event: 'task_upsert' }, ({ payload }) => {
+      if (payload?.originDeviceId === DEVICE_ID) return;
+      if (payload?.task) callbacks.onTaskUpsert(payload.task);
+    })
+    .on('broadcast', { event: 'task_delete' }, ({ payload }) => {
+      if (payload?.originDeviceId === DEVICE_ID) return;
+      if (payload?.taskId) callbacks.onTaskDelete(payload.taskId);
+    })
+    .on('broadcast', { event: 'project_upsert' }, ({ payload }) => {
+      if (payload?.originDeviceId === DEVICE_ID) return;
+      if (payload?.project) callbacks.onProjectUpsert(payload.project);
+    })
+    // 2. PostgreSQL Changes (for background/cold-start catch-up)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` },
+      () => {
+        callbacks.onRefreshRequested();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'projects', filter: `user_id=eq.${userId}` },
+      () => {
+        callbacks.onRefreshRequested();
+      }
+    )
+    .subscribe();
+
+  activeSyncChannel = channel;
+
+  return () => {
+    if (activeSyncChannel && supabase) {
+      supabase.removeChannel(activeSyncChannel);
+      activeSyncChannel = null;
+    }
+  };
+}
+
+export function broadcastTimerState(userId: string, timerState: ActiveTimerState | null): void {
+  if (!activeSyncChannel) return;
+  activeSyncChannel.send({
+    type: 'broadcast',
+    event: 'timer_state',
+    payload: {
+      userId,
+      originDeviceId: DEVICE_ID,
+      timerState,
+    },
+  });
+}
+
+export function broadcastTaskChange(userId: string, task: Task): void {
+  if (!activeSyncChannel) return;
+  activeSyncChannel.send({
+    type: 'broadcast',
+    event: 'task_upsert',
+    payload: {
+      userId,
+      originDeviceId: DEVICE_ID,
+      task,
+    },
+  });
+}
+
+export function broadcastTaskDelete(userId: string, taskId: string): void {
+  if (!activeSyncChannel) return;
+  activeSyncChannel.send({
+    type: 'broadcast',
+    event: 'task_delete',
+    payload: {
+      userId,
+      originDeviceId: DEVICE_ID,
+      taskId,
+    },
+  });
+}
+
+export function broadcastProjectChange(userId: string, project: Project): void {
+  if (!activeSyncChannel) return;
+  activeSyncChannel.send({
+    type: 'broadcast',
+    event: 'project_upsert',
+    payload: {
+      userId,
+      originDeviceId: DEVICE_ID,
+      project,
+    },
+  });
+}

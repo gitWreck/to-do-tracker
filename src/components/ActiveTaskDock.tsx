@@ -19,7 +19,8 @@ import {
   User as UserIcon,
   ShieldCheck,
   HardDrive,
-  Menu
+  Menu,
+  WifiOff
 } from 'lucide-react';
 
 interface ActiveTaskDockProps {
@@ -39,7 +40,18 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
   isPipActive,
   onToggleMobileMenu,
 }) => {
-  const { activeTask, activeTimer, stopTimer, toggleTaskComplete, projects, tasks, isSyncing } = useTasks();
+  const {
+    activeTask,
+    activeTimer,
+    stopTimer,
+    toggleTaskComplete,
+    projects,
+    tasks,
+    isSyncing,
+    isOnline,
+    queuedMutationsCount,
+    syncOfflineQueueNow,
+  } = useTasks();
   const { isDark, toggleTheme } = useTheme();
   const { user, isOfflineMode, setOfflineMode, signOut, isConfigured } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -153,29 +165,55 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Cloud Sync Status Indicator */}
           {!isOfflineMode && user ? (
-            <div
-              title={isSyncing ? 'Syncing changes to Supabase...' : 'Synchronized with Supabase Cloud'}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300"
-            >
-              {isSyncing ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
-                  <span className="text-indigo-600 dark:text-indigo-400">Syncing...</span>
-                </>
-              ) : (
-                <>
-                  <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-slate-700 dark:text-neutral-300">Cloud Synced</span>
-                </>
-              )}
-            </div>
+            !isOnline ? (
+              <button
+                onClick={syncOfflineQueueNow}
+                title="Device is offline. Changes are saved locally and will auto-sync when connection returns. Tap to retry."
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition cursor-pointer"
+              >
+                <WifiOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <span className="hidden sm:inline">Offline</span>
+                {queuedMutationsCount > 0 && (
+                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-200/80 dark:bg-amber-800/80 text-amber-900 dark:text-amber-100">
+                    {queuedMutationsCount}
+                  </span>
+                )}
+              </button>
+            ) : isSyncing || queuedMutationsCount > 0 ? (
+              <button
+                onClick={syncOfflineQueueNow}
+                title="Syncing offline changes to Supabase Cloud..."
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-spin flex-shrink-0" />
+                <span className="hidden sm:inline">Syncing...</span>
+                {queuedMutationsCount > 0 && (
+                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-indigo-200/80 dark:bg-indigo-800/80 text-indigo-900 dark:text-indigo-100">
+                    {queuedMutationsCount}
+                  </span>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={syncOfflineQueueNow}
+                title="Live Realtime Multi-Device Sync Active. Click to verify & force sync now."
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700/80 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 transition cursor-pointer"
+              >
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <span className="hidden lg:inline text-slate-700 dark:text-neutral-200">Live Sync</span>
+              </button>
+            )
           ) : (
             <div
               title="Running in Local Offline Storage"
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300"
             >
-              <HardDrive className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              <span>Local Offline</span>
+              <HardDrive className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <span className="hidden sm:inline">Local Offline</span>
             </div>
           )}
 

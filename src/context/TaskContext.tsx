@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Task, Project, ActiveTimerState, FilterState, TimeEntry } from '@/types';
 import { ToastInfo } from '@/components/Toast';
 import {
@@ -14,7 +14,11 @@ import {
   syncTaskToCloud,
   deleteCloudTask,
   syncProjectToCloud,
-  migrateLocalDataToCloud
+  migrateLocalDataToCloud,
+  initRealtimeSync,
+  broadcastTimerState,
+  flushOfflineQueue,
+  getOfflineQueue,
 } from '@/lib/cloudSync';
 import { useAuth } from './AuthContext';
 import { getTodayDateString } from '@/lib/time';
@@ -29,6 +33,9 @@ interface TaskContextType {
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   filteredTasks: Task[];
   isSyncing: boolean;
+  isOnline: boolean;
+  queuedMutationsCount: number;
+  syncOfflineQueueNow: () => Promise<void>;
 
   // Completion commit modal state
   pendingCommitTask: Task | null;
@@ -74,6 +81,12 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthorized, isOfflineMode } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [queuedMutationsCount, setQueuedMutationsCount] = useState<number>(() => {
+    return typeof window !== 'undefined' ? getOfflineQueue().length : 0;
+  });
   const hasLoadedFromCloud = useRef(false);
 
   const [tasks, setTasks] = useState<Task[]>(loadTasks);
@@ -133,6 +146,155 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ignore storage errors
     }
   }, [filters.layoutStyle]);
+
+  // Supabase Realtime multi-device synchronization
+  useEffect(() => {
+    if (!user || !isAuthorized || isOfflineMode) return;
+
+    const cleanupRealtime = initRealtimeSync(user.id, {
+      onTaskUpsert: (incomingTask) => {
+        setTasks(prev => {
+          const index = prev.findIndex(t => t.id === incomingTask.id);
+          if (index >= 0) {
+            const next = [...prev];
+            next[index] = incomingTask;
+            return next;
+          }
+          return [incomingTask, ...prev];
+        });
+      },
+      onTaskDelete: (deletedTaskId) => {
+        setTasks(prev => prev.filter(t => t.id !== deletedTaskId));
+        setActiveTimer(prev => (prev?.taskId === deletedTaskId ? null : prev));
+      },
+      onProjectUpsert: (incomingProj) => {
+        setProjects(prev => {
+          const index = prev.findIndex(p => p.id === incomingProj.id);
+          if (index >= 0) {
+            const next = [...prev];
+            next[index] = incomingProj;
+            return next;
+          }
+          return [...prev, incomingProj];
+        });
+      },
+      onTimerBroadcast: (remoteTimer) => {
+        setActiveTimer(remoteTimer);
+      },
+      onRefreshRequested: () => {
+        fetchUserDataFromCloud(user.id).then(data => {
+          if (data) {
+            if (data.projects.length > 0) setProjects(data.projects);
+            if (data.tasks.length > 0) setTasks(data.tasks);
+          }
+        });
+      },
+    });
+
+    return () => {
+      cleanupRealtime();
+    };
+  }, [user?.id, isAuthorized, isOfflineMode]);
+
+  // Network reconnect & offline queue auto-flushing
+  const handleOnline = useCallback(async () => {
+    setIsOnline(true);
+    if (!user || !isAuthorized || isOfflineMode) return;
+
+    setIsSyncing(true);
+    try {
+      const { flushed } = await flushOfflineQueue();
+      setQueuedMutationsCount(getOfflineQueue().length);
+      if (flushed > 0) {
+        setToast({
+          id: `flush-${Date.now()}`,
+          message: `Reconnected! Synced ${flushed} offline ${flushed === 1 ? 'change' : 'changes'}.`,
+        });
+      }
+      const cloudData = await fetchUserDataFromCloud(user.id);
+      if (cloudData) {
+        if (cloudData.projects.length > 0) setProjects(cloudData.projects);
+        if (cloudData.tasks.length > 0) setTasks(cloudData.tasks);
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [user, isAuthorized, isOfflineMode]);
+
+  const handleOffline = useCallback(() => {
+    setIsOnline(false);
+  }, []);
+
+  useEffect(() => {
+    const handleQueueChange = (e: Event) => {
+      const customEvent = e as CustomEvent<number>;
+      setQueuedMutationsCount(
+        typeof customEvent.detail === 'number' ? customEvent.detail : getOfflineQueue().length
+      );
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('devtracker:queue_change', handleQueueChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('devtracker:queue_change', handleQueueChange);
+    };
+  }, [handleOnline, handleOffline]);
+
+  // Tab foregrounding auto-flush & cloud refresh
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        setIsOnline(true);
+        if (user && isAuthorized && !isOfflineMode) {
+          const { flushed } = await flushOfflineQueue();
+          setQueuedMutationsCount(getOfflineQueue().length);
+          if (flushed > 0) {
+            setToast({
+              id: `flush-vis-${Date.now()}`,
+              message: `Synced ${flushed} queued ${flushed === 1 ? 'change' : 'changes'}.`,
+            });
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, isAuthorized, isOfflineMode]);
+
+  const syncOfflineQueueNow = useCallback(async () => {
+    if (!navigator.onLine) {
+      setToast({
+        id: `offline-warn-${Date.now()}`,
+        message: 'Device is offline. Changes are saved locally and will auto-sync when connected.',
+      });
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const { flushed } = await flushOfflineQueue();
+      setQueuedMutationsCount(getOfflineQueue().length);
+      if (user && isAuthorized && !isOfflineMode) {
+        const cloudData = await fetchUserDataFromCloud(user.id);
+        if (cloudData) {
+          if (cloudData.projects.length > 0) setProjects(cloudData.projects);
+          if (cloudData.tasks.length > 0) setTasks(cloudData.tasks);
+        }
+      }
+      setToast({
+        id: `manual-sync-${Date.now()}`,
+        message: flushed > 0 ? `Synced ${flushed} offline ${flushed === 1 ? 'change' : 'changes'}!` : 'All data is up to date with cloud.',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [user, isAuthorized, isOfflineMode]);
 
   // Persist tasks and projects whenever they change
   useEffect(() => {
@@ -234,6 +396,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     setActiveTimer(null);
+    if (user && isAuthorized && !isOfflineMode) {
+      broadcastTimerState(user.id, null);
+    }
   };
 
   // Start timer for a task. Enforces single active task rule!
@@ -250,14 +415,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const entryId = `entry-${now}-${Math.random().toString(36).substring(2, 7)}`;
     const baseSeconds = target.totalDurationSeconds || 0;
 
-    setActiveTimer({
+    const nextTimer: ActiveTimerState = {
       taskId,
       entryId,
       startTime: now,
       baseSeconds,
       sessionSeconds: 0,
       elapsedSeconds: baseSeconds,
-    });
+    };
+
+    setActiveTimer(nextTimer);
+    if (user && isAuthorized && !isOfflineMode) {
+      broadcastTimerState(user.id, nextTimer);
+    }
 
     // Mark task as IN_PROGRESS if it was PENDING
     setTasks(prev =>
@@ -502,12 +672,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (activeTimer?.taskId === taskId) {
       setActiveTimer(null);
+      if (user && isAuthorized && !isOfflineMode) {
+        broadcastTimerState(user.id, null);
+      }
     }
 
     setTasks(prev => prev.filter(t => t.id !== taskId));
 
     if (user && isAuthorized && !isOfflineMode) {
-      deleteCloudTask(taskId);
+      deleteCloudTask(user.id, taskId);
     }
 
     setPendingDeleteTaskId(null);
@@ -660,6 +833,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFilters,
         filteredTasks,
         isSyncing,
+        isOnline,
+        queuedMutationsCount,
+        syncOfflineQueueNow,
         pendingCommitTask,
         requestTaskComplete,
         commitTaskComplete,
