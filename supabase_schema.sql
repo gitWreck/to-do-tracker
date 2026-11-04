@@ -84,3 +84,4 @@ create policy "Users can manage own time entries"
   for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+

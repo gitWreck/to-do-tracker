@@ -47,3 +47,4 @@ export async function signOutCloud() {
     await supabase.auth.signOut();
   }
 }
+

@@ -7,18 +7,53 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Runtime data & dependencies
 node_modules
 dist
 dist-ssr
+build
 *.local
+*.tsbuildinfo
+
+# Environment variables & secrets (CRITICAL: Never commit credentials)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Vercel deployment artifacts
+.vercel
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Tauri / Rust native build artifacts (for future desktop packaging)
+src-tauri/target/
+
+# Linter & test coverage caches
+.eslintcache
+.stylelintcache
+coverage/
+.nyc_output/

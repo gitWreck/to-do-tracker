@@ -114,17 +114,15 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
             <div className="flex bg-slate-100 dark:bg-neutral-950 p-1 rounded-lg border border-slate-200 dark:border-neutral-800 text-xs">
               <button
                 onClick={() => setActiveTab('TABLE')}
-                className={`px-3 py-1 rounded-md font-medium transition ${
-                  activeTab === 'TABLE' ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
-                }`}
+                className={`px-3 py-1 rounded-md font-medium transition ${activeTab === 'TABLE' ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                  }`}
               >
                 Table Preview
               </button>
               <button
                 onClick={() => setActiveTab('MARKDOWN')}
-                className={`px-3 py-1 rounded-md font-medium transition ${
-                  activeTab === 'MARKDOWN' ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
-                }`}
+                className={`px-3 py-1 rounded-md font-medium transition ${activeTab === 'MARKDOWN' ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                  }`}
               >
                 Weekly Summary (Markdown)
               </button>
@@ -220,11 +218,10 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
                         <td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{row.durationHrs}</td>
                         <td className="py-2.5 px-3 text-center">
                           <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              row.status === 'DONE'
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${row.status === 'DONE'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800'
                                 : 'bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300'
-                            }`}
+                              }`}
                           >
                             {row.status}
                           </span>
