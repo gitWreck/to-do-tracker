@@ -59,5 +59,7 @@ export interface ActiveTimerState {
   taskId: string | null;
   entryId: string | null;
   startTime: number | null; // Milliseconds timestamp (Date.now())
-  elapsedSeconds: number;
+  elapsedSeconds: number;   // Total accumulated seconds (baseSeconds + sessionSeconds)
+  sessionSeconds?: number;  // Duration of current running session
+  baseSeconds?: number;     // Task accumulated seconds prior to starting this session
 }

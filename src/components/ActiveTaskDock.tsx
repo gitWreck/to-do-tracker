@@ -51,7 +51,7 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
     });
   });
   if (activeTimer) {
-    todayTotalSeconds += activeTimer.elapsedSeconds;
+    todayTotalSeconds += (activeTimer.sessionSeconds || 0);
   }
 
   return (

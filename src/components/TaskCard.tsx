@@ -39,8 +39,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   const isCompleted = task.status === 'COMPLETED';
 
   // Total duration including live active timer elapsed seconds if this task is active
-  const totalSeconds =
-    (task.totalDurationSeconds || 0) + (isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : 0);
+  const totalSeconds = isCurrentTaskRunning && activeTimer
+    ? activeTimer.elapsedSeconds
+    : (task.totalDurationSeconds || 0);
 
   const handleTitleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

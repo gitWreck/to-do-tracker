@@ -103,8 +103,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const interval = setInterval(() => {
       setActiveTimer(prev => {
         if (!prev?.startTime) return null;
-        const elapsed = Math.floor((Date.now() - prev.startTime) / 1000);
-        return { ...prev, elapsedSeconds: elapsed };
+        const sessionElapsed = Math.floor((Date.now() - prev.startTime) / 1000);
+        const base = prev.baseSeconds || 0;
+        return {
+          ...prev,
+          sessionSeconds: sessionElapsed,
+          elapsedSeconds: base + sessionElapsed,
+        };
       });
     }, 500);
 
@@ -183,12 +188,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const now = Date.now();
     const entryId = `entry-${now}-${Math.random().toString(36).substring(2, 7)}`;
+    const baseSeconds = target.totalDurationSeconds || 0;
 
     setActiveTimer({
       taskId,
       entryId,
       startTime: now,
-      elapsedSeconds: 0,
+      baseSeconds,
+      sessionSeconds: 0,
+      elapsedSeconds: baseSeconds,
     });
 
     // Mark task as IN_PROGRESS if it was PENDING

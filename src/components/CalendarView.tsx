@@ -414,9 +414,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
                           {task.title}
                         </div>
 
-                        {task.totalDurationSeconds > 0 && (
+                        {(isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : task.totalDurationSeconds) > 0 && (
                           <div className="mt-1 font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                            Total: {formatDurationCompact(task.totalDurationSeconds)}
+                            Total: {formatDurationCompact(isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : task.totalDurationSeconds)}
                           </div>
                         )}
                       </div>

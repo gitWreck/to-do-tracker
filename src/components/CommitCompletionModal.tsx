@@ -32,7 +32,9 @@ export const CommitCompletionModal: React.FC<CommitCompletionModalProps> = ({
   if (!isOpen || !task) return null;
 
   // Calculate estimated final duration
-  const baseSeconds = (task.totalDurationSeconds || 0) + (isTimerRunningOnTask ? activeTimerSeconds : 0);
+  const baseSeconds = isTimerRunningOnTask
+    ? activeTimerSeconds
+    : (task.totalDurationSeconds || 0);
   const totalWithExtra = baseSeconds + extraMinutes * 60;
 
   const handleAddMinutes = (mins: number) => {
