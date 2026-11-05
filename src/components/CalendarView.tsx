@@ -429,6 +429,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
                           {task.title}
                         </div>
 
+                        {task.description && (
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-neutral-400 whitespace-pre-line line-clamp-2">
+                            {task.description}
+                          </p>
+                        )}
+
                         {(() => {
                           const dateSpan = getTaskDateSpan(task);
                           return (

@@ -32,8 +32,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
     deleteTask,
   } = useTasks();
 
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
+  const [editedDescription, setEditedDescription] = useState(task.description || '');
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const isCurrentTaskRunning = activeTimer?.taskId === task.id;
   const isCompleted = task.status === 'COMPLETED';
@@ -62,12 +64,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
     </span>
   );
 
-  const handleTitleSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editedTitle.trim()) {
-      updateTask(task.id, { title: editedTitle.trim() });
+      updateTask(task.id, {
+        title: editedTitle.trim(),
+        description: editedDescription.trim() || undefined,
+      });
     }
-    setIsEditingTitle(false);
+    setIsEditing(false);
   };
 
   const getPriorityBadge = (priority: Task['priority']) => {
@@ -206,9 +211,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   const QuickActions = (
     <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
       <button
-        onClick={() => setIsEditingTitle(true)}
+        onClick={() => {
+          setEditedTitle(task.title);
+          setEditedDescription(task.description || '');
+          setIsEditing(true);
+        }}
         className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition cursor-pointer"
-        title="Edit Title"
+        title="Edit Task & Description"
       >
         <Pencil className="w-3.5 h-3.5" />
       </button>
@@ -269,23 +278,50 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <div className="mt-0.5">{CheckboxIcon}</div>
 
             <div className="flex-1 min-w-0">
-              {isEditingTitle ? (
-                <form onSubmit={handleTitleSubmit} className="flex items-center gap-1.5">
+              {isEditing ? (
+                <form onSubmit={handleEditSubmit} className="space-y-2">
                   <input
                     type="text"
                     value={editedTitle}
                     onChange={e => setEditedTitle(e.target.value)}
                     autoFocus
-                    onBlur={handleTitleSubmit}
-                    className="flex-1 px-2 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
+                    placeholder="Task title..."
+                    className="w-full px-2.5 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
                   />
-                  <button type="submit" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
-                    Done
-                  </button>
+                  <textarea
+                    value={editedDescription}
+                    onChange={e => setEditedDescription(e.target.value)}
+                    placeholder="Description / notes (Enter for new line)..."
+                    rows={3}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 resize-y"
+                  />
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditedTitle(task.title);
+                        setEditedDescription(task.description || '');
+                      }}
+                      className="px-2 py-0.5 text-xs text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-2.5 py-0.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded shadow-xs cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
                 </form>
               ) : (
                 <h4
-                  onDoubleClick={() => setIsEditingTitle(true)}
+                  onDoubleClick={() => {
+                    setEditedTitle(task.title);
+                    setEditedDescription(task.description || '');
+                    setIsEditing(true);
+                  }}
                   className={`text-sm font-semibold leading-snug cursor-pointer select-text ${isCompleted
                       ? 'line-through text-slate-400 dark:text-neutral-500'
                       : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
@@ -298,10 +334,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           </div>
 
           {/* Description */}
-          {task.description && (
-            <p className="text-xs text-slate-500 dark:text-neutral-400 line-clamp-2 mb-3 pl-8">
-              {task.description}
-            </p>
+          {task.description && !isEditing && (
+            <div className="mb-3 pl-8">
+              <p
+                className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${
+                  !isDescExpanded ? 'line-clamp-2' : ''
+                }`}
+              >
+                {task.description}
+              </p>
+              {(task.description.includes('\n') || task.description.length > 90) && (
+                <button
+                  type="button"
+                  onClick={() => setIsDescExpanded(prev => !prev)}
+                  className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline mt-0.5 block cursor-pointer"
+                >
+                  {isDescExpanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
           )}
 
           {/* Location & Tags */}
@@ -378,24 +429,51 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           </div>
 
           {/* Title Row */}
-          {isEditingTitle ? (
-            <form onSubmit={handleTitleSubmit} className="flex items-center gap-2 mt-1">
+          {isEditing ? (
+            <form onSubmit={handleEditSubmit} className="space-y-2 mt-2">
               <input
                 type="text"
                 value={editedTitle}
                 onChange={e => setEditedTitle(e.target.value)}
                 autoFocus
-                onBlur={handleTitleSubmit}
-                className="flex-1 px-2 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
+                placeholder="Task title..."
+                className="w-full px-2.5 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
               />
-              <button type="submit" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
-                Done
-              </button>
+              <textarea
+                value={editedDescription}
+                onChange={e => setEditedDescription(e.target.value)}
+                placeholder="Description / notes (Enter for new line)..."
+                rows={3}
+                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 resize-y"
+              />
+              <div className="flex items-center justify-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditedTitle(task.title);
+                    setEditedDescription(task.description || '');
+                  }}
+                  className="px-2 py-0.5 text-xs text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-2.5 py-0.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded shadow-xs cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
             </form>
           ) : (
             <div className="flex items-center gap-2">
               <span
-                onDoubleClick={() => setIsEditingTitle(true)}
+                onDoubleClick={() => {
+                  setEditedTitle(task.title);
+                  setEditedDescription(task.description || '');
+                  setIsEditing(true);
+                }}
                 className={`text-sm font-semibold leading-snug cursor-pointer select-text truncate ${isCompleted
                     ? 'line-through text-slate-400 dark:text-neutral-500'
                     : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
@@ -414,10 +492,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           )}
 
           {/* Description or Notes if present */}
-          {task.description && (
-            <p className="mt-1 text-xs text-slate-500 dark:text-neutral-400 line-clamp-1">
-              {task.description}
-            </p>
+          {task.description && !isEditing && (
+            <div className="mt-1">
+              <p
+                className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${
+                  !isDescExpanded ? 'line-clamp-2' : ''
+                }`}
+              >
+                {task.description}
+              </p>
+              {(task.description.includes('\n') || task.description.length > 120) && (
+                <button
+                  type="button"
+                  onClick={() => setIsDescExpanded(prev => !prev)}
+                  className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline mt-0.5 block cursor-pointer"
+                >
+                  {isDescExpanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
           )}
 
           {/* Tags */}
