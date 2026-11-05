@@ -14,6 +14,7 @@ import {
   syncTaskToCloud,
   deleteCloudTask,
   syncProjectToCloud,
+  deleteCloudProject,
   migrateLocalDataToCloud,
   initRealtimeSync,
   broadcastTimerState,
@@ -76,6 +77,8 @@ interface TaskContextType {
     markCompleted: boolean;
   }) => void;
   createProject: (name: string, color: string) => Project;
+  updateProject: (projectId: string, updates: { name?: string; color?: string }) => void;
+  deleteProject: (projectId: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -179,6 +182,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           return [...prev, incomingProj];
         });
+      },
+      onProjectDelete: (deletedProjId) => {
+        setProjects(prev => prev.filter(p => p.id !== deletedProjId));
       },
       onTimerBroadcast: (remoteTimer) => {
         setActiveTimer(remoteTimer);
@@ -799,6 +805,93 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newProj;
   };
 
+  const updateProject = (projectId: string, updates: { name?: string; color?: string }): void => {
+    let updatedProj: Project | undefined;
+    setProjects(prev =>
+      prev.map(p => {
+        if (p.id === projectId) {
+          updatedProj = {
+            ...p,
+            name: updates.name !== undefined ? updates.name.trim() : p.name,
+            color: updates.color !== undefined ? updates.color : p.color,
+          };
+          return updatedProj;
+        }
+        return p;
+      })
+    );
+
+    if (updatedProj && user && isAuthorized && !isOfflineMode) {
+      syncProjectToCloud(user.id, updatedProj);
+    }
+
+    if (updatedProj) {
+      setToast({
+        id: `proj-upd-${Date.now()}`,
+        message: `Updated project "${updatedProj.name}"`,
+      });
+    }
+  };
+
+  const deleteProject = (projectId: string): void => {
+    const projectToDelete = projects.find(p => p.id === projectId);
+    if (!projectToDelete) return;
+
+    if (projects.length <= 1) {
+      setToast({
+        id: `proj-del-err-${Date.now()}`,
+        message: 'Cannot delete the only remaining project.',
+      });
+      return;
+    }
+
+    const remainingProjects = projects.filter(p => p.id !== projectId);
+    const fallbackProjectId = remainingProjects[0]?.id || 'proj-general';
+
+    const previousTasks = [...tasks];
+    const previousProjects = [...projects];
+
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.projectId === projectId) {
+          const updated = { ...t, projectId: fallbackProjectId };
+          if (user && isAuthorized && !isOfflineMode) {
+            syncTaskToCloud(user.id, updated);
+          }
+          return updated;
+        }
+        return t;
+      })
+    );
+
+    setProjects(remainingProjects);
+
+    if (filters.selectedProjectId === projectId) {
+      setFilters(prev => ({ ...prev, selectedProjectId: 'ALL' }));
+    }
+
+    if (user && isAuthorized && !isOfflineMode) {
+      deleteCloudProject(user.id, projectId);
+    }
+
+    setToast({
+      id: `proj-del-${Date.now()}`,
+      message: `Deleted project "${projectToDelete.name}" (tasks moved to ${remainingProjects[0]?.name || 'General'})`,
+      undoAction: () => {
+        setProjects(previousProjects);
+        setTasks(previousTasks);
+        if (user && isAuthorized && !isOfflineMode) {
+          syncProjectToCloud(user.id, projectToDelete);
+          previousTasks.forEach(t => {
+            if (t.projectId === projectId) {
+              syncTaskToCloud(user.id, t);
+            }
+          });
+        }
+      },
+    });
+  };
+
   // Filter tasks based on search, project, location, category, tag, and statusTab
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -880,6 +973,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteTask,
         addRetroactiveEntry,
         createProject,
+        updateProject,
+        deleteProject,
       }}
     >
       {children}

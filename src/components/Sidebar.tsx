@@ -17,6 +17,9 @@ import {
   Hash,
   CheckSquare,
   X,
+  Pencil,
+  Trash2,
+  Check,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +34,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
     filters,
     setFilters,
     createProject,
+    updateProject,
+    deleteProject,
   } = useTasks();
 
   const handleAction = (cb: () => void) => {
@@ -43,6 +48,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectColor, setNewProjectColor] = useState('#3b82f6');
   const [showAddProject, setShowAddProject] = useState(false);
+
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editProjectName, setEditProjectName] = useState('');
+  const [editProjectColor, setEditProjectColor] = useState('#3b82f6');
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+
+  const startEditingProject = (p: { id: string; name: string; color: string }) => {
+    setEditingProjectId(p.id);
+    setEditProjectName(p.name);
+    setEditProjectColor(p.color);
+    setDeletingProjectId(null);
+  };
+
+  const handleSaveProjectEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProjectId || !editProjectName.trim()) return;
+    updateProject(editingProjectId, {
+      name: editProjectName.trim(),
+      color: editProjectColor,
+    });
+    setEditingProjectId(null);
+  };
 
   // Compute counts
   const pendingCount = tasks.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
@@ -319,32 +346,149 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
             {projects.map(project => {
               const count = tasks.filter(t => t.projectId === project.id).length;
               const isSelected = filters.selectedProjectId === project.id;
+              const isEditingThis = editingProjectId === project.id;
+              const isDeletingThis = deletingProjectId === project.id;
+
+              if (isEditingThis) {
+                return (
+                  <form
+                    key={project.id}
+                    onSubmit={handleSaveProjectEdit}
+                    className="p-2 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-indigo-400 dark:border-indigo-600 space-y-2 shadow-xs"
+                  >
+                    <input
+                      type="text"
+                      value={editProjectName}
+                      onChange={e => setEditProjectName(e.target.value)}
+                      autoFocus
+                      placeholder="Project name..."
+                      className="w-full px-2 py-1 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-md text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1">
+                        {['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444', '#64748b'].map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setEditProjectColor(color)}
+                            className={`w-3.5 h-3.5 rounded-full transition ${
+                              editProjectColor === color ? 'ring-2 ring-slate-800 dark:ring-white scale-110' : ''
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setEditingProjectId(null)}
+                          className="px-2 py-0.5 text-[10px] text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-2.5 py-0.5 text-[10px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded shadow-xs"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                );
+              }
+
+              if (isDeletingThis) {
+                return (
+                  <div
+                    key={project.id}
+                    className="p-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl space-y-1.5"
+                  >
+                    <p className="text-[11px] text-red-700 dark:text-red-300 font-medium leading-tight">
+                      Delete "{project.name}"? Tasks will move to General.
+                    </p>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setDeletingProjectId(null)}
+                        className="px-2 py-0.5 text-[10px] text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          deleteProject(project.id);
+                          setDeletingProjectId(null);
+                        }}
+                        className="px-2.5 py-0.5 text-[10px] font-semibold bg-red-600 hover:bg-red-500 text-white rounded shadow-xs cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <button
+                <div
                   key={project.id}
-                  onClick={() =>
-                    handleAction(() =>
-                      setFilters(prev => ({
-                        ...prev,
-                        selectedProjectId: isSelected ? 'ALL' : project.id,
-                      }))
-                    )
-                  }
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition font-medium ${
+                  className={`group/proj w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition font-medium ${
                     isSelected
                       ? 'bg-slate-200 dark:bg-neutral-800 text-slate-900 dark:text-white font-semibold'
                       : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-900/60'
                   }`}
                 >
-                  <div className="flex items-center gap-2 truncate">
+                  <button
+                    onClick={() =>
+                      handleAction(() =>
+                        setFilters(prev => ({
+                          ...prev,
+                          selectedProjectId: isSelected ? 'ALL' : project.id,
+                        }))
+                      )
+                    }
+                    className="flex items-center gap-2 truncate flex-1 text-left min-w-0 cursor-pointer"
+                  >
                     <span
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: project.color }}
                     />
                     <span className="truncate">{project.name}</span>
+                  </button>
+
+                  <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                    {/* Action buttons revealed on hover */}
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover/proj:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          startEditingProject(project);
+                        }}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-neutral-700 transition cursor-pointer"
+                        title="Edit Project Name & Color"
+                      >
+                        <Pencil className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setDeletingProjectId(project.id);
+                        }}
+                        className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-white dark:hover:bg-neutral-700 transition cursor-pointer"
+                        title="Delete Project"
+                      >
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+
+                    <span className="text-[11px] text-slate-400 dark:text-neutral-500 tabular-nums">
+                      {count}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-slate-400 dark:text-neutral-500 flex-shrink-0">{count}</span>
-                </button>
+                </div>
               );
             })}
           </div>

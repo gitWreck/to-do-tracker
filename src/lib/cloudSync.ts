@@ -10,7 +10,7 @@ export interface CloudData {
 export interface QueuedMutation {
   id: string;
   timestamp: number;
-  type: 'UPSERT_TASK' | 'DELETE_TASK' | 'UPSERT_PROJECT';
+  type: 'UPSERT_TASK' | 'DELETE_TASK' | 'UPSERT_PROJECT' | 'DELETE_PROJECT';
   userId: string;
   payload: any;
 }
@@ -165,6 +165,11 @@ export async function flushOfflineQueue(): Promise<{ flushed: number; remaining:
             color: project.color,
             is_archived: project.isArchived,
           });
+          if (error) throw error;
+          flushedCount++;
+        } else if (item.type === 'DELETE_PROJECT') {
+          const projectId: string = item.payload;
+          const { error } = await supabase.from('projects').delete().eq('id', projectId);
           if (error) throw error;
           flushedCount++;
         }
@@ -466,6 +471,7 @@ export function initRealtimeSync(
     onTaskUpsert: (task: Task) => void;
     onTaskDelete: (taskId: string) => void;
     onProjectUpsert: (project: Project) => void;
+    onProjectDelete?: (projectId: string) => void;
     onTimerBroadcast: (timerState: ActiveTimerState | null) => void;
     onRefreshRequested: () => void;
   }
@@ -502,6 +508,10 @@ export function initRealtimeSync(
     .on('broadcast', { event: 'project_upsert' }, ({ payload }) => {
       if (payload?.originDeviceId === DEVICE_ID) return;
       if (payload?.project) callbacks.onProjectUpsert(payload.project);
+    })
+    .on('broadcast', { event: 'project_delete' }, ({ payload }) => {
+      if (payload?.originDeviceId === DEVICE_ID) return;
+      if (payload?.projectId) callbacks.onProjectDelete?.(payload.projectId);
     })
     // 2. PostgreSQL Changes (for background/cold-start catch-up)
     .on(
@@ -580,4 +590,37 @@ export function broadcastProjectChange(userId: string, project: Project): void {
       project,
     },
   });
+}
+
+export function broadcastProjectDelete(userId: string, projectId: string): void {
+  if (!activeSyncChannel) return;
+  activeSyncChannel.send({
+    type: 'broadcast',
+    event: 'project_delete',
+    payload: {
+      userId,
+      originDeviceId: DEVICE_ID,
+      projectId,
+    },
+  });
+}
+
+// Delete project from Supabase
+export async function deleteCloudProject(userId: string, projectId: string): Promise<void> {
+  broadcastProjectDelete(userId, projectId);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    enqueueMutation(userId, 'DELETE_PROJECT', projectId);
+    return;
+  }
+
+  if (!supabase) return;
+  try {
+    const { error } = await supabase.from('projects').delete().eq('id', projectId);
+    if (error) {
+      enqueueMutation(userId, 'DELETE_PROJECT', projectId);
+    }
+  } catch {
+    enqueueMutation(userId, 'DELETE_PROJECT', projectId);
+  }
 }
