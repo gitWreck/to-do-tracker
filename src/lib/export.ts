@@ -66,7 +66,7 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
 
 export function exportToCSV(rows: AccomplishmentRow[], filename = 'accomplishment_report.csv') {
   const headers = ['Date', 'Project', 'Category', 'Location', 'Task', 'Start Time', 'End Time', 'Duration (Hrs)', 'Status'];
-  
+
   const csvContent = [
     headers.join(','),
     ...rows.map(r => [

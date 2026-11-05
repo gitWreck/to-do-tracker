@@ -33,11 +33,18 @@ export function formatTimeOnly(isoString?: string): string {
   return `${hours}:${minutes}`;
 }
 
+export function getLocalDateString(d: Date): string {
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function formatDateOnly(isoString?: string): string {
   if (!isoString) return '';
   const date = new Date(isoString);
   if (isNaN(date.getTime())) return '';
-  return date.toISOString().split('T')[0];
+  return getLocalDateString(date);
 }
 
 export function getTodayDateString(): string {
@@ -114,12 +121,23 @@ export function getTaskDateSpan(task: {
     }
   }
 
-  const startDayStr = startDate.toISOString().split('T')[0];
+  const startDayStr = getLocalDateString(startDate);
 
   // 1. Completed Task
   if (task.status === 'COMPLETED' && task.completedAt) {
     const completedDate = new Date(task.completedAt);
-    const completedDayStr = completedDate.toISOString().split('T')[0];
+    const completedDayStr = getLocalDateString(completedDate);
+
+    // If completed on the same local calendar day, never show range
+    if (startDayStr === completedDayStr || formatShortDate(startDate) === formatShortDate(completedDate)) {
+      return {
+        display: `${formatShortDate(completedDate)} • Done ${formatTime(completedDate)}`,
+        tooltip: `Completed on ${formatFullDate(completedDate)} at ${formatTime(completedDate)}`,
+        isMultiDay: false,
+        daySpan: 1,
+        type: 'completed-same-day',
+      };
+    }
 
     const startMs = new Date(startDayStr + 'T00:00:00').getTime();
     const endMs = new Date(completedDayStr + 'T00:00:00').getTime();
@@ -127,10 +145,10 @@ export function getTaskDateSpan(task: {
     const daySpan = diffDays + 1;
 
     if (diffDays > 0) {
-      const dayWord = diffDays === 1 ? '1 day' : `${diffDays} days`;
+      const dayWord = `${daySpan} days`;
       return {
         display: `${formatShortDate(startDate)} – ${formatShortDate(completedDate)} (${dayWord})`,
-        tooltip: `Started: ${formatFullDate(startDate)}\nCompleted: ${formatFullDate(completedDate)} at ${formatTime(completedDate)}\nTotal span: ${dayWord} (${daySpan} calendar days)`,
+        tooltip: `Started: ${formatFullDate(startDate)}\nCompleted: ${formatFullDate(completedDate)} at ${formatTime(completedDate)}\nTotal span: ${daySpan} calendar days`,
         isMultiDay: true,
         daySpan,
         type: 'completed-multi-day',
@@ -150,26 +168,30 @@ export function getTaskDateSpan(task: {
   if (task.dueDate) {
     const dueDayStr = task.dueDate.split('T')[0];
     const dueDateObj = new Date(dueDayStr + 'T00:00:00');
-    const startMs = new Date(startDayStr + 'T00:00:00').getTime();
-    const dueMs = new Date(dueDayStr + 'T00:00:00').getTime();
-    const diffDays = Math.round((dueMs - startMs) / (1000 * 60 * 60 * 24));
 
-    if (diffDays > 0) {
-      const dayWord = diffDays === 1 ? '1d' : `${diffDays}d`;
-      return {
-        display: `${formatShortDate(startDate)} – Due ${formatShortDate(dueDateObj)} (${dayWord})`,
-        tooltip: `Created: ${formatFullDate(startDate)}\nTarget Due Date: ${formatFullDate(dueDateObj)} (${diffDays} days scheduled span)`,
-        isMultiDay: true,
-        daySpan: diffDays + 1,
-        type: 'pending-range',
-      };
-    } else if (diffDays === 0) {
+    // If due on the same local calendar day as created, never show range
+    if (startDayStr === dueDayStr || formatShortDate(startDate) === formatShortDate(dueDateObj)) {
       return {
         display: `Due ${formatShortDate(dueDateObj)}`,
         tooltip: `Due on ${formatFullDate(dueDateObj)}`,
         isMultiDay: false,
         daySpan: 1,
         type: 'pending-due',
+      };
+    }
+
+    const startMs = new Date(startDayStr + 'T00:00:00').getTime();
+    const dueMs = new Date(dueDayStr + 'T00:00:00').getTime();
+    const diffDays = Math.round((dueMs - startMs) / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0) {
+      const spanDays = diffDays + 1;
+      return {
+        display: `${formatShortDate(startDate)} – Due ${formatShortDate(dueDateObj)} (${spanDays}d)`,
+        tooltip: `Created: ${formatFullDate(startDate)}\nTarget Due Date: ${formatFullDate(dueDateObj)} (${spanDays} days scheduled span)`,
+        isMultiDay: true,
+        daySpan: spanDays,
+        type: 'pending-range',
       };
     } else {
       return {
@@ -184,18 +206,26 @@ export function getTaskDateSpan(task: {
 
   // 3. Pending Task with work logged across multiple days
   if (task.timeEntries && task.timeEntries.length > 0) {
-    const dates = Array.from(new Set(task.timeEntries.map(e => e.date || e.startTime.split('T')[0]).filter(Boolean))).sort();
+    const dates = Array.from(
+      new Set(
+        task.timeEntries
+          .map(e => e.date || (e.startTime ? getLocalDateString(new Date(e.startTime)) : ''))
+          .filter(Boolean)
+      )
+    ).sort();
     if (dates.length > 1) {
       const firstDate = new Date(dates[0] + 'T00:00:00');
       const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
-      const spanDays = Math.round((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return {
-        display: `Worked ${formatShortDate(firstDate)} – ${formatShortDate(lastDate)} (${spanDays}d)`,
-        tooltip: `First work session: ${formatFullDate(firstDate)}\nLatest work session: ${formatFullDate(lastDate)}\nActive across ${dates.length} days`,
-        isMultiDay: true,
-        daySpan: spanDays,
-        type: 'pending-range',
-      };
+      if (formatShortDate(firstDate) !== formatShortDate(lastDate)) {
+        const spanDays = Math.round((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return {
+          display: `Worked ${formatShortDate(firstDate)} – ${formatShortDate(lastDate)} (${spanDays}d)`,
+          tooltip: `First work session: ${formatFullDate(firstDate)}\nLatest work session: ${formatFullDate(lastDate)}\nActive across ${dates.length} days`,
+          isMultiDay: true,
+          daySpan: spanDays,
+          type: 'pending-range',
+        };
+      }
     }
   }
 

@@ -323,12 +323,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                     'Same-day deliverable (1 day)'
                   ) : (
                     <>
-                      Multi-day span: {Math.max(1, Math.round((new Date(dueDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))} days scheduled
+                      Multi-day span: {Math.max(1, Math.round((new Date(dueDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)} days scheduled
                     </>
                   )}
                 </span>
                 <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
-                  {startDate} &rarr; {dueDate}
+                  {startDate === dueDate ? startDate : `${startDate} \u2192 ${dueDate}`}
                 </span>
               </div>
             )}
