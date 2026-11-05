@@ -268,102 +268,105 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
         </div>
       </div>
 
-      {/* Work Location & Priority */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-            Work Location
-          </label>
-          <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-neutral-950 p-1 rounded-xl border border-slate-200 dark:border-neutral-800">
-            <button
-              type="button"
-              onClick={() => setEditedLocation('OFFICE')}
-              className={`flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg font-medium transition cursor-pointer ${
-                editedLocation === 'OFFICE'
-                  ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Building2 className="w-3 h-3 flex-shrink-0" />
-              <span>Office</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditedLocation('HOME')}
-              className={`flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg font-medium transition cursor-pointer ${
-                editedLocation === 'HOME'
-                  ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Home className="w-3 h-3 flex-shrink-0" />
-              <span>Home</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditedLocation('FIELD')}
-              className={`flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg font-medium transition cursor-pointer ${
-                editedLocation === 'FIELD'
-                  ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Compass className="w-3 h-3 flex-shrink-0" />
-              <span>Field</span>
-            </button>
-          </div>
+      {/* Work Location */}
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+          Work Location
+        </label>
+        <div className="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-neutral-950 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-800">
+          <button
+            type="button"
+            onClick={() => setEditedLocation('OFFICE')}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedLocation === 'OFFICE'
+                ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Office</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditedLocation('HOME')}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedLocation === 'HOME'
+                ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <Home className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Home</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditedLocation('FIELD')}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedLocation === 'FIELD'
+                ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Field</span>
+          </button>
         </div>
+      </div>
 
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-            Priority
-          </label>
-          <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-neutral-950 p-1 rounded-xl border border-slate-200 dark:border-neutral-800">
-            <button
-              type="button"
-              onClick={() => setEditedPriority('LOW')}
-              className={`py-1.5 text-xs rounded-lg font-medium transition cursor-pointer text-center ${
-                editedPriority === 'LOW'
-                  ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Low
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditedPriority('MEDIUM')}
-              className={`py-1.5 text-xs rounded-lg font-medium transition cursor-pointer text-center ${
-                editedPriority === 'MEDIUM'
-                  ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Med
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditedPriority('HIGH')}
-              className={`py-1.5 text-xs rounded-lg font-medium transition cursor-pointer text-center ${
-                editedPriority === 'HIGH'
-                  ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              High
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditedPriority('URGENT')}
-              className={`py-1.5 text-xs rounded-lg font-medium transition cursor-pointer text-center ${
-                editedPriority === 'URGENT'
-                  ? 'bg-rose-600 text-white dark:bg-rose-600/30 dark:text-rose-300 dark:border dark:border-rose-500/50 shadow-2xs'
-                  : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Urgent
-            </button>
-          </div>
+      {/* Priority Level */}
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+          Priority Level
+        </label>
+        <div className="grid grid-cols-4 gap-1.5 bg-slate-100 dark:bg-neutral-950 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-800">
+          <button
+            type="button"
+            onClick={() => setEditedPriority('LOW')}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedPriority === 'LOW'
+                ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'LOW' ? 'bg-white dark:bg-emerald-300' : 'bg-emerald-500'}`} />
+            <span>Low</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditedPriority('MEDIUM')}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedPriority === 'MEDIUM'
+                ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'MEDIUM' ? 'bg-white dark:bg-blue-300' : 'bg-blue-500'}`} />
+            <span>Medium</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditedPriority('HIGH')}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedPriority === 'HIGH'
+                ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'HIGH' ? 'bg-white dark:bg-amber-300' : 'bg-amber-500'}`} />
+            <span>High</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditedPriority('URGENT')}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
+              editedPriority === 'URGENT'
+                ? 'bg-rose-600 text-white dark:bg-rose-600/30 dark:text-rose-300 dark:border dark:border-rose-500/50 shadow-2xs font-semibold'
+                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'URGENT' ? 'bg-white dark:bg-rose-300 animate-pulse' : 'bg-rose-500'}`} />
+            <span>Urgent</span>
+          </button>
         </div>
       </div>
 
