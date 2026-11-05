@@ -116,17 +116,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
   const DateBadge = (
     <span
-      className={`inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
-        dateSpan.isMultiDay
-          ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/70 shadow-2xs'
-          : 'text-slate-400 dark:text-neutral-500'
-      }`}
+      className={`inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${dateSpan.isMultiDay
+        ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/70 shadow-2xs'
+        : 'text-slate-400 dark:text-neutral-500'
+        }`}
       title={dateSpan.tooltip}
     >
       <Calendar
-        className={`w-3 h-3 flex-shrink-0 ${
-          dateSpan.isMultiDay ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-neutral-500'
-        }`}
+        className={`w-3 h-3 flex-shrink-0 ${dateSpan.isMultiDay ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-neutral-500'
+          }`}
       />
       <span>{dateSpan.display}</span>
     </span>
@@ -277,11 +275,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedLocation('OFFICE')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedLocation === 'OFFICE'
-                ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${editedLocation === 'OFFICE'
+              ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Office</span>
@@ -289,11 +286,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedLocation('HOME')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedLocation === 'HOME'
-                ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${editedLocation === 'HOME'
+              ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <Home className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Home</span>
@@ -301,11 +297,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedLocation('FIELD')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedLocation === 'FIELD'
-                ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${editedLocation === 'FIELD'
+              ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <Compass className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Field</span>
@@ -322,11 +317,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedPriority('LOW')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedPriority === 'LOW'
-                ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'LOW'
+              ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'LOW' ? 'bg-white dark:bg-emerald-300' : 'bg-emerald-500'}`} />
             <span>Low</span>
@@ -334,11 +328,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedPriority('MEDIUM')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedPriority === 'MEDIUM'
-                ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'MEDIUM'
+              ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'MEDIUM' ? 'bg-white dark:bg-blue-300' : 'bg-blue-500'}`} />
             <span>Medium</span>
@@ -346,11 +339,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedPriority('HIGH')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedPriority === 'HIGH'
-                ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'HIGH'
+              ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'HIGH' ? 'bg-white dark:bg-amber-300' : 'bg-amber-500'}`} />
             <span>High</span>
@@ -358,11 +350,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             type="button"
             onClick={() => setEditedPriority('URGENT')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${
-              editedPriority === 'URGENT'
-                ? 'bg-rose-600 text-white dark:bg-rose-600/30 dark:text-rose-300 dark:border dark:border-rose-500/50 shadow-2xs font-semibold'
-                : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-            }`}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'URGENT'
+              ? 'bg-rose-600 text-white dark:bg-rose-600/30 dark:text-rose-300 dark:border dark:border-rose-500/50 shadow-2xs font-semibold'
+              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
+              }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'URGENT' ? 'bg-white dark:bg-rose-300 animate-pulse' : 'bg-rose-500'}`} />
             <span>Urgent</span>
@@ -381,22 +372,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <button
               type="button"
               onClick={() => setEditedDueDate('')}
-              className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition cursor-pointer ${
-                !editedDueDate
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                  : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
-              }`}
+              className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition cursor-pointer ${!editedDueDate
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
+                }`}
             >
               No Due Date
             </button>
             <button
               type="button"
               onClick={() => setEditedDueDate(getTodayDateString())}
-              className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition cursor-pointer ${
-                editedDueDate === getTodayDateString()
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                  : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
-              }`}
+              className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition cursor-pointer ${editedDueDate === getTodayDateString()
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
+                }`}
             >
               Today
             </button>
@@ -465,9 +454,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
       {/* Form Action Buttons */}
       <div className="flex items-center justify-between pt-3.5 border-t border-slate-200 dark:border-neutral-800">
-        <div className="text-[11px] text-slate-400 dark:text-neutral-500 hidden sm:block">
+        {/* <div className="text-[11px] text-slate-400 dark:text-neutral-500 hidden sm:block">
           <kbd className="font-mono bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-[10px] border border-slate-200 dark:border-neutral-700">Esc</kbd> cancel &bull; <kbd className="font-mono bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-[10px] border border-slate-200 dark:border-neutral-700">Ctrl+Enter</kbd> save
-        </div>
+        </div> */}
         <div className="flex items-center gap-2.5 ml-auto">
           <button
             type="button"
@@ -481,7 +470,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             className="px-4 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
           >
             <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Save Changes</span>
+            <span>Save</span>
           </button>
         </div>
       </div>
@@ -588,8 +577,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
     <button
       onClick={() => toggleTaskComplete(task.id)}
       className={`relative group/check flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-150 flex-shrink-0 cursor-pointer shadow-2xs ${isCompleted
-          ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs shadow-emerald-500/25 scale-100'
-          : 'border-slate-300 dark:border-neutral-700 hover:border-emerald-500 dark:hover:border-emerald-400 bg-white dark:bg-neutral-900 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30'
+        ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs shadow-emerald-500/25 scale-100'
+        : 'border-slate-300 dark:border-neutral-700 hover:border-emerald-500 dark:hover:border-emerald-400 bg-white dark:bg-neutral-900 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30'
         }`}
       title={isCompleted ? 'Click to reopen task' : 'Mark as completed (Review & Commit)'}
     >
@@ -678,11 +667,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
                 e.stopPropagation();
                 togglePinTask(task.id);
               }}
-              className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer ${
-                task.isPinned
-                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-300 dark:ring-amber-800'
-                  : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50 dark:text-neutral-600 dark:hover:text-amber-400 dark:hover:bg-neutral-800'
-              }`}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer ${task.isPinned
+                ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-300 dark:ring-amber-800'
+                : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50 dark:text-neutral-600 dark:hover:text-amber-400 dark:hover:bg-neutral-800'
+                }`}
               title={task.isPinned ? "Unpin from Today's Top 3" : "Pin to Today's Top 3 (The Big 3)"}
             >
               <Star className={`w-3.5 h-3.5 ${task.isPinned ? 'fill-amber-400 text-amber-500' : ''}`} />
@@ -729,17 +717,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
     return (
       <div
-        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${
-          isCurrentTaskRunning
-            ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
-            : isArchived
+        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${isCurrentTaskRunning
+          ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
+          : isArchived
             ? 'bg-slate-50/60 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
             : isCompleted
-            ? 'bg-slate-50/80 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
-            : isPinned
-            ? 'bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-neutral-900/80 dark:to-neutral-900/80 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/40 shadow-xs'
-            : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/70 dark:hover:bg-neutral-900/95 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
-        }`}
+              ? 'bg-slate-50/80 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
+              : isPinned
+                ? 'bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-neutral-900/80 dark:to-neutral-900/80 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/40 shadow-xs'
+                : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/70 dark:hover:bg-neutral-900/95 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
+          }`}
       >
         {/* Left vertical color accent border */}
         <div
@@ -790,8 +777,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
               <h4
                 onDoubleClick={startEditing}
                 className={`text-sm font-semibold leading-snug cursor-pointer select-text ${isCompleted
-                    ? 'line-through text-slate-400 dark:text-neutral-500'
-                    : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
+                  ? 'line-through text-slate-400 dark:text-neutral-500'
+                  : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
                   }`}
               >
                 {task.title}
@@ -803,9 +790,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           {task.description && (
             <div className="mb-3 pl-8">
               <p
-                className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${
-                  !isDescExpanded ? 'line-clamp-2' : ''
-                }`}
+                className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${!isDescExpanded ? 'line-clamp-2' : ''
+                  }`}
               >
                 {task.description}
               </p>
@@ -865,17 +851,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
   return (
     <div
-      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${
-        isCurrentTaskRunning
-          ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
-          : isArchived
+      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${isCurrentTaskRunning
+        ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
+        : isArchived
           ? 'bg-slate-50/60 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
           : isCompleted
-          ? 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
-          : isPinned
-          ? 'bg-gradient-to-r from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-neutral-900/80 dark:to-neutral-900/80 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/40 shadow-xs'
-          : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/90 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
-      }`}
+            ? 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
+            : isPinned
+              ? 'bg-gradient-to-r from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-neutral-900/80 dark:to-neutral-900/80 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/40 shadow-xs'
+              : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/90 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
+        }`}
     >
       {/* Left vertical color accent bar */}
       <div
@@ -932,8 +917,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <span
               onDoubleClick={startEditing}
               className={`text-sm font-semibold leading-snug cursor-pointer select-text truncate ${isCompleted
-                  ? 'line-through text-slate-400 dark:text-neutral-500'
-                  : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
+                ? 'line-through text-slate-400 dark:text-neutral-500'
+                : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
                 }`}
               title={task.title}
             >
@@ -951,9 +936,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           {task.description && (
             <div className="mt-1">
               <p
-                className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${
-                  !isDescExpanded ? 'line-clamp-2' : ''
-                }`}
+                className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${!isDescExpanded ? 'line-clamp-2' : ''
+                  }`}
               >
                 {task.description}
               </p>
