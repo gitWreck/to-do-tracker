@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTasks } from '@/context/TaskContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 import {
   buildAccomplishmentRows,
   exportToCSV,
@@ -23,6 +24,7 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
   onClose,
 }) => {
   const { tasks, projects } = useTasks();
+  const { shouldRender, isEntered } = useModalAnimation(isOpen, { onClose });
 
   const [dateRange, setDateRange] = useState<'ALL' | '7DAYS' | '30DAYS'>('ALL');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
@@ -68,7 +70,7 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
     return generateWeeklySummaryMarkdown(filteredRows);
   }, [filteredRows]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const handleExportCSV = () => {
     const dateStr = new Date().toISOString().split('T')[0];
@@ -82,8 +84,20 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-colors">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm transition-opacity duration-200 ${
+        isEntered ? 'opacity-100 ease-out' : 'opacity-0 ease-in pointer-events-none'
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all duration-200 ${
+          isEntered
+            ? 'opacity-100 scale-100 translate-y-0 ease-out'
+            : 'opacity-0 scale-95 translate-y-2 ease-in'
+        }`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-950/40">
           <div className="flex items-center gap-3">

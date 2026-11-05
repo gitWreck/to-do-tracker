@@ -296,7 +296,7 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowProfileMenu(false)}
                 />
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xl p-3 z-50 text-xs">
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xl p-3 z-50 text-xs animate-in fade-in zoom-in-95 duration-150 origin-top-right">
                   {user ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-neutral-800">

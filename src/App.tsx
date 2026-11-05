@@ -137,6 +137,11 @@ function MainApp() {
   // Global hotkeys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape: Close mobile menu if open
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+        return;
+      }
       // Ctrl+Shift+T: Toggle Mini-Widget
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'T' || e.key === 't')) {
         e.preventDefault();
@@ -184,23 +189,32 @@ function MainApp() {
         {/* Desktop Sidebar (hidden on mobile) */}
         <Sidebar />
 
-        {/* Mobile Slide-Out Drawer Navigation */}
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex animate-in fade-in duration-150">
-            {/* Backdrop overlay */}
-            <div
-              className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-xs transition-opacity"
-              onClick={() => setIsMobileMenuOpen(false)}
+        {/* Mobile Slide-Out Drawer Navigation (smooth slide-in and slide-out) */}
+        <div
+          className={`fixed inset-0 z-50 md:hidden flex transition-all duration-300 ${
+            isMobileMenuOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
+          }`}
+          aria-hidden={!isMobileMenuOpen}
+        >
+          {/* Backdrop overlay with fade */}
+          <div
+            className={`fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-xs transition-opacity duration-300 ease-out ${
+              isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          {/* Off-canvas drawer with slide */}
+          <div
+            className={`relative z-10 h-full transition-transform duration-300 ease-out ${
+              isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <Sidebar
+              isMobileDrawer={true}
+              onCloseMobile={() => setIsMobileMenuOpen(false)}
             />
-            {/* Off-canvas drawer */}
-            <div className="relative z-10 animate-in slide-in-from-left duration-200 h-full">
-              <Sidebar
-                isMobileDrawer={true}
-                onCloseMobile={() => setIsMobileMenuOpen(false)}
-              />
-            </div>
           </div>
-        )}
+        </div>
 
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-neutral-950">
           {filters.statusTab === 'CALENDAR' ? (
@@ -218,7 +232,6 @@ function MainApp() {
 
       {/* Modals & Overlays */}
       <CreateTaskModal
-        key={createPresetDate || 'new-task'}
         isOpen={isCreateOpen}
         onClose={() => {
           setIsCreateOpen(false);
@@ -239,7 +252,6 @@ function MainApp() {
 
       {/* Commit Completion Prompt Modal */}
       <CommitCompletionModal
-        key={pendingCommitTask?.id || 'commit-modal'}
         task={pendingCommitTask}
         project={projects.find(p => p.id === pendingCommitTask?.projectId)}
         activeTimerSeconds={activeTimer?.taskId === pendingCommitTask?.id ? (activeTimer?.elapsedSeconds ?? 0) : 0}
@@ -251,7 +263,6 @@ function MainApp() {
 
       {/* Delete Confirmation Prompt Modal */}
       <DeleteConfirmationModal
-        key={pendingDeleteTask?.id || 'delete-modal'}
         task={pendingDeleteTask}
         isOpen={!!pendingDeleteTask}
         onClose={cancelTaskDelete}

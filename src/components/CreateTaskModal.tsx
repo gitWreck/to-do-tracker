@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { TaskCategory, WorkLocation, TaskPriority } from '@/types';
 import { getTodayDateString } from '@/lib/time';
-import { X, Plus } from 'lucide-react';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { X, Plus, Calendar } from 'lucide-react';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface CreateTaskModalProps {
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, initialDate }) => {
   const { projects, createTask } = useTasks();
+  const { shouldRender, isEntered } = useModalAnimation(isOpen, { onClose });
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -19,10 +21,18 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [category, setCategory] = useState<TaskCategory>('PROGRAMMING');
   const [location, setLocation] = useState<WorkLocation>('OFFICE');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
+  const [startDate, setStartDate] = useState(initialDate || getTodayDateString());
   const [dueDate, setDueDate] = useState(initialDate || getTodayDateString());
   const [tagsInput, setTagsInput] = useState('');
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (initialDate) {
+      setStartDate(initialDate);
+      setDueDate(initialDate);
+    }
+  }, [initialDate]);
+
+  if (!shouldRender) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +43,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       .map(t => t.trim().replace(/^#/, ''))
       .filter(Boolean);
 
+    const startIso = startDate === getTodayDateString() ? new Date().toISOString() : `${startDate}T09:00:00.000Z`;
+
     createTask({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -40,6 +52,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       category,
       location,
       priority,
+      createdAt: startIso,
       dueDate,
       tags: extraTags,
     });
@@ -51,8 +64,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-colors">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm transition-opacity duration-200 ${
+        isEntered ? 'opacity-100 ease-out' : 'opacity-0 ease-in pointer-events-none'
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-all duration-200 ${
+          isEntered
+            ? 'opacity-100 scale-100 translate-y-0 ease-out'
+            : 'opacity-0 scale-95 translate-y-2 ease-in'
+        }`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
@@ -194,32 +219,122 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
             </div>
           </div>
 
-          {/* Due Date & Tags */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-                Due Date
+          {/* Date Range: Start Date & Due Date */}
+          <div className="p-3 bg-slate-50 dark:bg-neutral-950/60 rounded-xl border border-slate-200 dark:border-neutral-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400">
+                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                Date Range / Timeline
               </label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
-              />
+              {/* Quick presets */}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500 dark:text-neutral-400 mr-1">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = getTodayDateString();
+                    setStartDate(today);
+                    setDueDate(today);
+                  }}
+                  className="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400 transition"
+                >
+                  1 Day
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date(startDate || getTodayDateString());
+                    d.setDate(d.getDate() + 3);
+                    const y = d.getFullYear();
+                    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const day = d.getDate().toString().padStart(2, '0');
+                    setDueDate(`${y}-${m}-${day}`);
+                  }}
+                  className="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400 transition"
+                >
+                  +3 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date(startDate || getTodayDateString());
+                    d.setDate(d.getDate() + 7);
+                    const y = d.getFullYear();
+                    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const day = d.getDate().toString().padStart(2, '0');
+                    setDueDate(`${y}-${m}-${day}`);
+                  }}
+                  className="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400 transition"
+                >
+                  +1 Week
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-                Tags (comma separated)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Backend, CSAR, Review"
-                value={tagsInput}
-                onChange={e => setTagsInput(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <span className="block text-[11px] font-medium text-slate-600 dark:text-neutral-400 mb-1">
+                  Start Date
+                </span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => {
+                    const newStart = e.target.value;
+                    setStartDate(newStart);
+                    if (dueDate && newStart > dueDate) {
+                      setDueDate(newStart);
+                    }
+                  }}
+                  className="w-full px-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <span className="block text-[11px] font-medium text-slate-600 dark:text-neutral-400 mb-1">
+                  Target Due Date
+                </span>
+                <input
+                  type="date"
+                  value={dueDate}
+                  min={startDate}
+                  onChange={e => setDueDate(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
             </div>
+
+            {/* Date Span Preview Indicator */}
+            {startDate && dueDate && (
+              <div className="text-[11px] text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between">
+                <span>
+                  {startDate === dueDate ? (
+                    'Same-day deliverable (1 day)'
+                  ) : (
+                    <>
+                      Multi-day span: {Math.max(1, Math.round((new Date(dueDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))} days scheduled
+                    </>
+                  )}
+                </span>
+                <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                  {startDate} &rarr; {dueDate}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
+              Tags (comma separated)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Backend, CSAR, Review"
+              value={tagsInput}
+              onChange={e => setTagsInput(e.target.value)}
+              className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+            />
           </div>
 
           {/* Footer Actions */}

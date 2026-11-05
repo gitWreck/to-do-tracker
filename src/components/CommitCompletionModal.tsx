@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, Project } from '@/types';
-import { formatDuration, formatDurationCompact } from '@/lib/time';
+import { formatDuration, formatDurationCompact, getTaskDateSpan } from '@/lib/time';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 import {
   CheckCircle2,
   X,
   Clock,
+  Calendar,
 } from 'lucide-react';
 
 interface CommitCompletionModalProps {
@@ -26,15 +28,35 @@ export const CommitCompletionModal: React.FC<CommitCompletionModalProps> = ({
   onClose,
   onCommit,
 }) => {
+  const { shouldRender, isEntered } = useModalAnimation(isOpen, { onClose });
+  const [cachedTask, setCachedTask] = useState<Task | null>(task);
+  const [cachedProject, setCachedProject] = useState<typeof project>(project);
+
   const [note, setNote] = useState(task?.completionNote || '');
   const [extraMinutes, setExtraMinutes] = useState<number>(0);
 
-  if (!isOpen || !task) return null;
+  useEffect(() => {
+    if (task) {
+      setCachedTask(task);
+      setNote(task.completionNote || '');
+      setExtraMinutes(0);
+    }
+    if (project) {
+      setCachedProject(project);
+    }
+  }, [task, project]);
+
+  const displayTask = task || cachedTask;
+  const displayProject = project || cachedProject;
+
+  if (!shouldRender || !displayTask) return null;
+
+  const dateSpan = displayTask ? getTaskDateSpan(displayTask) : null;
 
   // Calculate estimated final duration
   const baseSeconds = isTimerRunningOnTask
     ? activeTimerSeconds
-    : (task.totalDurationSeconds || 0);
+    : (displayTask.totalDurationSeconds || 0);
   const totalWithExtra = baseSeconds + extraMinutes * 60;
 
   const handleAddMinutes = (mins: number) => {
@@ -51,7 +73,8 @@ export const CommitCompletionModal: React.FC<CommitCompletionModalProps> = ({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCommit(task.id, {
+    if (!displayTask) return;
+    onCommit(displayTask.id, {
       note: note.trim() || undefined,
       additionalSeconds: extraMinutes * 60,
     });
@@ -59,8 +82,18 @@ export const CommitCompletionModal: React.FC<CommitCompletionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-colors">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm transition-opacity duration-200 ${isEntered ? 'opacity-100 ease-out' : 'opacity-0 ease-in pointer-events-none'
+        }`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-all duration-200 ${isEntered
+            ? 'opacity-100 scale-100 translate-y-0 ease-out'
+            : 'opacity-0 scale-95 translate-y-2 ease-in'
+          }`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-950/40">
           <div className="flex items-center gap-2.5">
@@ -89,24 +122,39 @@ export const CommitCompletionModal: React.FC<CommitCompletionModalProps> = ({
           {/* Task Info Summary Card */}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800/80">
             <div className="flex items-center gap-2 mb-1">
-              {project && (
+              {displayProject && (
                 <span
                   className="px-2 py-0.5 text-[11px] font-semibold rounded text-white"
-                  style={{ backgroundColor: project.color }}
+                  style={{ backgroundColor: displayProject.color }}
                 >
-                  {project.name}
+                  {displayProject.name}
                 </span>
               )}
               <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 bg-slate-200/60 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
-                {task.category}
+                {displayTask.category}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-neutral-400">
-                &bull; {task.location}
+                &bull; {displayTask.location}
               </span>
             </div>
             <h3 className="font-semibold text-sm text-slate-900 dark:text-neutral-100 mt-1">
-              {task.title}
+              {displayTask.title}
             </h3>
+            {dateSpan && (
+              <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-neutral-800 flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
+                <Calendar className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span className="text-[11px]">Timeline:</span>
+                <span
+                  title={dateSpan.tooltip}
+                  className={`text-[11px] font-medium ${dateSpan.isMultiDay
+                      ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                      : 'text-slate-700 dark:text-neutral-300'
+                    }`}
+                >
+                  {dateSpan.display}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Time Tracking & Log Review */}

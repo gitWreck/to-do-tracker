@@ -10,9 +10,12 @@ Use this checklist to track and select upcoming enhancements for **DevTracker**.
   - Added `public/manifest.json`, Web App Manifest meta tags in `index.html`, Apple touch icons, and mobile status bar settings.
   - Supports full-screen standalone mode on iOS (Safari *Add to Home Screen*) and Android (Chrome *Install App*), running without browser address bars for a native app feel.
 
-- [x] **Responsive Mobile Drawer (Hamburger Menu)**
-  - On screens `< 768px`, the sidebar smoothly transforms into an off-canvas slide-out drawer with a backdrop overlay.
-  - Added a dedicated hamburger button to `ActiveTaskDock`. Tapping any category, project, or view tab automatically closes the drawer and displays the filtered tasks.
+- [x] **Responsive Mobile Drawer & Smooth Slide Nav Animations**
+  - On screens `< 768px`, the sidebar smoothly transforms into an off-canvas slide-out drawer with a backdrop overlay and CSS slide transitions (`-translate-x-full` ↔ `translate-x-0`).
+  - Added dedicated hamburger button, Escape key dismissal, and seamless auto-close on selection.
+
+- [x] **Pop-In / Pop-Out Modal Animations & Ergonomics**
+  - Built `useModalAnimation` hook with smooth spring zoom transitions (`scale-95 -> scale-100` / `scale-100 -> scale-95`), delayed unmounting, and Escape key dismissal across all modals without content flickering.
 
 - [x] **Touch Optimizations & Mobile Action Affordances**
   - Task card action icons (Edit, Delete, Start Timer) are always visible and comfortably tappable on mobile screens where hover states do not exist.
@@ -32,6 +35,11 @@ Use this checklist to track and select upcoming enhancements for **DevTracker**.
   - Local mutation queue (`devtracker_offline_queue_v1`) stores pending task upserts, deletes, and project modifications if network drops (offline mode, airplane, subway, dead zone).
   - Listens to browser `online` and `visibilitychange` events to automatically flush queued mutations in the background and pull latest cloud changes when foregrounded.
   - Reactive sync pill in `ActiveTaskDock`: shows `Live Sync` with active pulse dot when connected, `Offline (N queued)` badge when offline, and `Syncing...` during queue flushes. Tap pill to trigger an immediate verification & manual flush.
+
+- [x] **Multi-Day Task Date Ranges & Retroactive Range Logging**
+  - Full multi-day span intelligence (`getTaskDateSpan`): tasks completed or worked on across multiple days display rich date badges (e.g. `Nov 2 – Nov 5 (3 days)` with detailed hover tooltip breakdown).
+  - Create Task Modal features Start Date, Target Due Date, quick presets (`1 Day`, `+3 Days`, `+1 Week`), and live range indicator.
+  - Retroactive Modal supports multi-day work deliverables, creating distinct calendar day time logs for accomplishment reports.
 
 ---
 

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { Task } from '@/types';
-import { formatDurationCompact, formatDecimalHours, getTodayDateString } from '@/lib/time';
+import { formatDurationCompact, formatDecimalHours, getTodayDateString, getTaskDateSpan } from '@/lib/time';
 import {
   ChevronLeft,
   ChevronRight,
@@ -64,14 +64,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
     };
 
     tasks.forEach(task => {
-      // 1. Task due date or created date
-      const primaryDate = task.dueDate || task.createdAt.split('T')[0];
-      const entry = getOrCreate(primaryDate);
-      if (!entry.tasks.some(t => t.id === task.id)) {
-        entry.tasks.push(task);
+      // 1. Task created date & due date
+      const createdDate = task.createdAt.split('T')[0];
+      const entryCreated = getOrCreate(createdDate);
+      if (!entryCreated.tasks.some(t => t.id === task.id)) {
+        entryCreated.tasks.push(task);
       }
+
+      if (task.dueDate && task.dueDate !== createdDate) {
+        const dueEntry = getOrCreate(task.dueDate);
+        if (!dueEntry.tasks.some(t => t.id === task.id)) {
+          dueEntry.tasks.push(task);
+        }
+      }
+
       if (task.status === 'COMPLETED') {
-        entry.completedCount += 1;
+        const completedDate = task.completedAt ? task.completedAt.split('T')[0] : (task.dueDate || createdDate);
+        const compEntry = getOrCreate(completedDate);
+        if (!compEntry.tasks.some(t => t.id === task.id)) {
+          compEntry.tasks.push(task);
+        }
+        compEntry.completedCount += 1;
       }
 
       // 2. Time entries for this task
@@ -416,11 +429,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
                           {task.title}
                         </div>
 
-                        {(isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : task.totalDurationSeconds) > 0 && (
-                          <div className="mt-1 font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                            Total: {formatDurationCompact(isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : task.totalDurationSeconds)}
-                          </div>
-                        )}
+                        {(() => {
+                          const dateSpan = getTaskDateSpan(task);
+                          return (
+                            <div className="mt-1 flex items-center justify-between text-[10px]">
+                              <span
+                                title={dateSpan.tooltip}
+                                className={`truncate ${
+                                  dateSpan.isMultiDay
+                                    ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                                    : 'text-slate-500 dark:text-neutral-400'
+                                }`}
+                              >
+                                {dateSpan.display}
+                              </span>
+                              {(isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : task.totalDurationSeconds) > 0 && (
+                                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0 ml-1">
+                                  {formatDurationCompact(isCurrentTaskRunning && activeTimer ? activeTimer.elapsedSeconds : task.totalDurationSeconds)}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {!isCompleted && (

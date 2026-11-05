@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { TaskCategory, WorkLocation, TaskPriority } from '@/types';
-import { getTodayDateString } from '@/lib/time';
+import { getTodayDateString, getDatesInRange } from '@/lib/time';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { X, Clock } from 'lucide-react';
 
 interface RetroactiveModalProps {
@@ -11,6 +12,7 @@ interface RetroactiveModalProps {
 
 export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onClose }) => {
   const { projects, addRetroactiveEntry } = useTasks();
+  const { shouldRender, isEntered } = useModalAnimation(isOpen, { onClose });
 
   const [title, setTitle] = useState('');
   const [projectId, setProjectId] = useState(projects[0]?.id || '');
@@ -18,27 +20,33 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
   const [location, setLocation] = useState<WorkLocation>('OFFICE');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
   const [date, setDate] = useState(getTodayDateString());
+  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [endDate, setEndDate] = useState(getTodayDateString());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('12:00');
   const [markCompleted, setMarkCompleted] = useState(true);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
-  // Calculate duration in hours
-  const calculateDurationHours = () => {
+  // Calculate daily duration in hours
+  const calculateDailyHours = () => {
     try {
       const [startH, startM] = startTime.split(':').map(Number);
       const [endH, endM] = endTime.split(':').map(Number);
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
       if (endMinutes > startMinutes) {
-        return ((endMinutes - startMinutes) / 60).toFixed(2);
+        return (endMinutes - startMinutes) / 60;
       }
-      return '0.00';
+      return 0;
     } catch {
-      return '0.00';
+      return 0;
     }
   };
+
+  const dailyHours = calculateDailyHours();
+  const dayCount = isMultiDay && endDate > date ? getDatesInRange(date, endDate).length : 1;
+  const totalHours = (dailyHours * dayCount).toFixed(2);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +59,7 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
       location,
       priority,
       date,
+      endDate: isMultiDay && endDate > date ? endDate : undefined,
       startTime,
       endTime,
       markCompleted,
@@ -60,11 +69,21 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
     setTitle('');
   };
 
-  const durationHrs = calculateDurationHours();
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-colors">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm transition-opacity duration-200 ${
+        isEntered ? 'opacity-100 ease-out' : 'opacity-0 ease-in pointer-events-none'
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transition-all duration-200 ${
+          isEntered
+            ? 'opacity-100 scale-100 translate-y-0 ease-out'
+            : 'opacity-0 scale-95 translate-y-2 ease-in'
+        }`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
@@ -102,52 +121,100 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
             />
           </div>
 
-          {/* Date, Start Time, End Time Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-                Date
+          {/* Date, Range Toggle, Start Time, End Time Row */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400">
+                Date & Daily Schedule
               </label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
-              />
+              <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-amber-700 dark:text-amber-400 select-none">
+                <input
+                  type="checkbox"
+                  checked={isMultiDay}
+                  onChange={e => {
+                    setIsMultiDay(e.target.checked);
+                    if (e.target.checked && endDate < date) {
+                      setEndDate(date);
+                    }
+                  }}
+                  className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-0 bg-slate-100 dark:bg-neutral-950 border-slate-300 dark:border-neutral-800"
+                />
+                Multi-day work deliverable
+              </label>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-                Start Time
-              </label>
-              <input
-                type="time"
-                required
-                value={startTime}
-                onChange={e => setStartTime(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
+            <div className={`grid grid-cols-1 ${isMultiDay ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-neutral-400 mb-1">
+                  {isMultiDay ? 'Start Date' : 'Date'}
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={date}
+                  onChange={e => {
+                    const newDate = e.target.value;
+                    setDate(newDate);
+                    if (isMultiDay && endDate < newDate) {
+                      setEndDate(newDate);
+                    }
+                  }}
+                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-                End Time
-              </label>
-              <input
-                type="time"
-                required
-                value={endTime}
-                onChange={e => setEndTime(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
-              />
+              {isMultiDay && (
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 dark:text-neutral-400 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={date}
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-neutral-400 mb-1">
+                  Daily Start Time
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-neutral-400 mb-1">
+                  Daily End Time
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
             </div>
           </div>
 
           {/* Computed Duration Banner */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs">
-            <span className="text-amber-800 dark:text-amber-300 font-medium">Calculated Time Elapsed:</span>
-            <span className="font-mono text-sm font-bold text-amber-600 dark:text-amber-400">{durationHrs} Hours</span>
+            <span className="text-amber-800 dark:text-amber-300 font-medium">
+              {isMultiDay && dayCount > 1
+                ? `Total Elapsed across ${dayCount} Days (${dailyHours.toFixed(2)}h/day):`
+                : 'Calculated Time Elapsed:'}
+            </span>
+            <span className="font-mono text-sm font-bold text-amber-600 dark:text-amber-400">{totalHours} Hours</span>
           </div>
 
           {/* Project, Category & Priority */}

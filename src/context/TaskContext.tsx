@@ -21,7 +21,7 @@ import {
   getOfflineQueue,
 } from '@/lib/cloudSync';
 import { useAuth } from './AuthContext';
-import { getTodayDateString } from '@/lib/time';
+import { getTodayDateString, getDatesInRange } from '@/lib/time';
 import confetti from 'canvas-confetti';
 
 interface TaskContextType {
@@ -69,6 +69,7 @@ interface TaskContextType {
     location: Task['location'];
     priority: Task['priority'];
     date: string;
+    endDate?: string;
     startTime: string; // HH:MM
     endTime: string;   // HH:MM
     markCompleted: boolean;
@@ -596,7 +597,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       projectId: data.projectId || projects[0]?.id || 'proj-general',
       tags: parsedTags,
       status: 'PENDING',
-      createdAt: new Date().toISOString(),
+      createdAt: data.createdAt || new Date().toISOString(),
       timeEntries: [],
       totalDurationSeconds: 0,
       dueDate: data.dueDate || getTodayDateString(),
@@ -708,28 +709,34 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     location: Task['location'];
     priority: Task['priority'];
     date: string;
+    endDate?: string;
     startTime: string; // HH:MM
     endTime: string;   // HH:MM
     markCompleted: boolean;
   }) => {
-    const startIso = new Date(`${data.date}T${data.startTime}:00`).toISOString();
-    const endIso = new Date(`${data.date}T${data.endTime}:00`).toISOString();
-    const startMs = new Date(startIso).getTime();
-    const endMs = new Date(endIso).getTime();
-    const durationSeconds = Math.max(60, Math.floor((endMs - startMs) / 1000));
+    const isRange = !!data.endDate && data.endDate > data.date;
+    const targetDates = isRange ? getDatesInRange(data.date, data.endDate!) : [data.date];
+
+    const startMs = new Date(`${data.date}T${data.startTime}:00`).getTime();
+    const endMs = new Date(`${data.date}T${data.endTime}:00`).getTime();
+    const durationPerDay = Math.max(60, Math.floor((endMs - startMs) / 1000));
+    const totalDuration = durationPerDay * targetDates.length;
 
     const taskId = `task-${Date.now()}`;
-    const entryId = `manual-entry-${Date.now()}`;
 
-    const newEntry: TimeEntry = {
-      id: entryId,
+    const entries: TimeEntry[] = targetDates.map((d, idx) => ({
+      id: `manual-entry-${Date.now()}-${idx}`,
       taskId,
-      startTime: startIso,
-      endTime: endIso,
-      durationSeconds,
+      startTime: new Date(`${d}T${data.startTime}:00`).toISOString(),
+      endTime: new Date(`${d}T${data.endTime}:00`).toISOString(),
+      durationSeconds: durationPerDay,
       isManualEntry: true,
-      date: data.date,
-    };
+      date: d,
+    }));
+
+    const firstIso = new Date(`${data.date}T${data.startTime}:00`).toISOString();
+    const lastDayStr = isRange ? data.endDate! : data.date;
+    const finalEndIso = new Date(`${lastDayStr}T${data.endTime}:00`).toISOString();
 
     const newTask: Task = {
       id: taskId,
@@ -740,11 +747,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       projectId: data.projectId,
       tags: [],
       status: data.markCompleted ? 'COMPLETED' : 'PENDING',
-      createdAt: startIso,
-      completedAt: data.markCompleted ? endIso : undefined,
-      dueDate: data.date,
-      timeEntries: [newEntry],
-      totalDurationSeconds: durationSeconds,
+      createdAt: firstIso,
+      completedAt: data.markCompleted ? finalEndIso : undefined,
+      dueDate: lastDayStr,
+      timeEntries: entries,
+      totalDurationSeconds: totalDuration,
     };
 
     setTasks(prev => [newTask, ...prev]);
@@ -755,7 +762,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setToast({
       id: `retro-${Date.now()}`,
-      message: `Logged past work: "${data.title}"`,
+      message: isRange
+        ? `Logged ${targetDates.length}-day work: "${data.title}"`
+        : `Logged past work: "${data.title}"`,
     });
   };
 

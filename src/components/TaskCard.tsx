@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Task, Project } from '@/types';
 import { useTasks } from '@/context/TaskContext';
-import { formatDuration, formatDurationCompact } from '@/lib/time';
+import { formatDuration, formatDurationCompact, getTaskDateSpan } from '@/lib/time';
 import {
   Play,
   Pause,
@@ -37,11 +37,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
   const isCurrentTaskRunning = activeTimer?.taskId === task.id;
   const isCompleted = task.status === 'COMPLETED';
+  const dateSpan = getTaskDateSpan(task);
 
   // Total duration including live active timer elapsed seconds if this task is active
   const totalSeconds = isCurrentTaskRunning && activeTimer
     ? activeTimer.elapsedSeconds
     : (task.totalDurationSeconds || 0);
+
+  const DateBadge = (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
+        dateSpan.isMultiDay
+          ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/70 shadow-2xs'
+          : 'text-slate-400 dark:text-neutral-500'
+      }`}
+      title={dateSpan.tooltip}
+    >
+      <Calendar
+        className={`w-3 h-3 flex-shrink-0 ${
+          dateSpan.isMultiDay ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-neutral-500'
+        }`}
+      />
+      <span>{dateSpan.display}</span>
+    </span>
+  );
 
   const handleTitleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,15 +322,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
         {/* Card Footer: Date on left, Timer on right */}
         <div className="pt-3 border-t border-slate-100 dark:border-neutral-800/80 flex items-center justify-between gap-2 mt-auto pl-1">
-          <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-neutral-500 font-medium">
-            <Calendar className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
-            {isCompleted && task.completedAt ? (
-              <span>Done {new Date(task.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            ) : (
-              <span>{new Date(task.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-            )}
-          </span>
-
+          {DateBadge}
           {TimerControl}
         </div>
       </div>
@@ -361,14 +372,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             {getPriorityBadge(task.priority)}
 
             {/* Created or completed date indicator */}
-            <span className="text-[11px] text-slate-400 dark:text-neutral-500 ml-auto hidden md:flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
-              {isCompleted && task.completedAt ? (
-                <span>Done {new Date(task.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              ) : (
-                <span>{new Date(task.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-              )}
-            </span>
+            <div className="ml-auto hidden sm:flex items-center">
+              {DateBadge}
+            </div>
           </div>
 
           {/* Title Row */}

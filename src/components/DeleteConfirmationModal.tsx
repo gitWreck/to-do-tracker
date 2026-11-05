@@ -1,6 +1,7 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task } from '@/types';
 import { formatDurationCompact } from '@/lib/time';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { Trash2, Archive, X, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
@@ -18,35 +19,36 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   onConfirmPermanentDelete,
   onArchive,
 }) => {
-  // Handle Escape key to cancel
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const { shouldRender, isEntered } = useModalAnimation(isOpen, { onClose });
+  const [cachedTask, setCachedTask] = useState<Task | null>(task);
 
   useEffect(() => {
-    if (!isOpen) return;
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleKeyDown]);
+    if (task) {
+      setCachedTask(task);
+    }
+  }, [task]);
 
-  if (!isOpen || !task) return null;
+  const displayTask = task || cachedTask;
 
-  const totalLogged = task.totalDurationSeconds || 0;
-  const entryCount = task.timeEntries?.length || 0;
+  if (!shouldRender || !displayTask) return null;
+
+  const totalLogged = displayTask.totalDurationSeconds || 0;
+  const entryCount = displayTask.timeEntries?.length || 0;
   const hasTrackedTime = totalLogged > 0;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs transition-opacity duration-200 ${
+        isEntered ? 'opacity-100 ease-out' : 'opacity-0 ease-in pointer-events-none'
+      }`}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-2xl overflow-hidden transition-all animate-in zoom-in-95 duration-150"
+        className={`w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-2xl overflow-hidden transition-all duration-200 ${
+          isEntered
+            ? 'opacity-100 scale-100 translate-y-0 ease-out'
+            : 'opacity-0 scale-95 translate-y-2 ease-in'
+        }`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header Bar */}
@@ -81,14 +83,14 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950/60 border border-slate-200/80 dark:border-neutral-800">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-neutral-800">
-                {task.category}
+                {displayTask.category}
               </span>
               <span className="text-[11px] text-slate-400 dark:text-neutral-500">
-                {task.location}
+                {displayTask.location}
               </span>
             </div>
             <p className="text-sm font-semibold text-slate-900 dark:text-white break-words line-clamp-2">
-              {task.title}
+              {displayTask.title}
             </p>
 
             {/* Time metric banner */}
@@ -112,7 +114,10 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             <>
               {/* Option 1: Archive (Recommended) */}
               <button
-                onClick={() => onArchive(task.id)}
+                onClick={() => {
+                  onArchive(displayTask.id);
+                  onClose();
+                }}
                 className="w-full text-left p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 transition group cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-indigo-500/50"
               >
                 <div className="flex items-start gap-3">
@@ -138,7 +143,10 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
 
               {/* Option 2: Delete Permanently */}
               <button
-                onClick={() => onConfirmPermanentDelete(task.id)}
+                onClick={() => {
+                  onConfirmPermanentDelete(displayTask.id);
+                  onClose();
+                }}
                 className="w-full text-left p-3.5 rounded-xl border border-rose-200/80 dark:border-rose-900/40 bg-rose-50/30 hover:bg-rose-50 dark:bg-rose-950/10 dark:hover:bg-rose-950/30 transition group cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
               >
                 <div className="flex items-start gap-3">
@@ -169,7 +177,10 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
               </p>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => onConfirmPermanentDelete(task.id)}
+                  onClick={() => {
+                    onConfirmPermanentDelete(displayTask.id);
+                    onClose();
+                  }}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
