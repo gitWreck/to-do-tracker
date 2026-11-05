@@ -79,6 +79,7 @@ interface TaskContextType {
   createProject: (name: string, color: string) => Project;
   updateProject: (projectId: string, updates: { name?: string; color?: string }) => void;
   deleteProject: (projectId: string) => void;
+  reorderProjects: (startIndex: number, endIndex: number) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -124,7 +125,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserDataFromCloud(user.id).then(async data => {
       if (cancelledRef.current) return;
       if (data && (data.tasks.length > 0 || data.projects.length > 0)) {
-        setProjects(data.projects);
+        let loadedProjects = data.projects;
+        try {
+          const rawOrder = localStorage.getItem('devtracker_project_order');
+          if (rawOrder) {
+            const orderIds: string[] = JSON.parse(rawOrder);
+            const map = new Map(orderIds.map((id, idx) => [id, idx]));
+            loadedProjects = [...data.projects].sort((a, b) => {
+              const aIdx = map.has(a.id) ? map.get(a.id)! : 999;
+              const bIdx = map.has(b.id) ? map.get(b.id)! : 999;
+              return aIdx - bIdx;
+            });
+          }
+        } catch {
+          // ignore
+        }
+        setProjects(loadedProjects);
         setTasks(data.tasks);
       } else {
         // First-time sync: push local data to Supabase
@@ -892,6 +908,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const reorderProjects = (startIndex: number, endIndex: number): void => {
+    if (startIndex === endIndex) return;
+    setProjects(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(startIndex, 1);
+      next.splice(endIndex, 0, moved);
+      try {
+        localStorage.setItem('devtracker_project_order', JSON.stringify(next.map(p => p.id)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
   // Filter tasks based on search, project, location, category, tag, and statusTab
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -975,6 +1006,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createProject,
         updateProject,
         deleteProject,
+        reorderProjects,
       }}
     >
       {children}

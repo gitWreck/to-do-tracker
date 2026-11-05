@@ -20,6 +20,9 @@ import {
   Pencil,
   Trash2,
   Check,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
     createProject,
     updateProject,
     deleteProject,
+    reorderProjects,
   } = useTasks();
 
   const handleAction = (cb: () => void) => {
@@ -53,6 +57,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
   const [editProjectName, setEditProjectName] = useState('');
   const [editProjectColor, setEditProjectColor] = useState('#3b82f6');
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+
+  const [draggedProjId, setDraggedProjId] = useState<string | null>(null);
+  const [dragOverProjId, setDragOverProjId] = useState<string | null>(null);
 
   const startEditingProject = (p: { id: string; name: string; color: string }) => {
     setEditingProjectId(p.id);
@@ -343,11 +350,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
               <span className="text-[11px] text-slate-400 dark:text-neutral-500">{tasks.length}</span>
             </button>
 
-            {projects.map(project => {
+            {projects.map((project, index) => {
               const count = tasks.filter(t => t.projectId === project.id).length;
               const isSelected = filters.selectedProjectId === project.id;
               const isEditingThis = editingProjectId === project.id;
               const isDeletingThis = deletingProjectId === project.id;
+              const isDragged = draggedProjId === project.id;
+              const isDragOver = dragOverProjId === project.id;
 
               if (isEditingThis) {
                 return (
@@ -433,33 +442,110 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
               return (
                 <div
                   key={project.id}
-                  className={`group/proj w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition font-medium ${
-                    isSelected
+                  draggable={!isEditingThis && !isDeletingThis}
+                  onDragStart={e => {
+                    e.dataTransfer.setData('text/plain', project.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                    setDraggedProjId(project.id);
+                  }}
+                  onDragOver={e => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverProjId !== project.id) {
+                      setDragOverProjId(project.id);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverProjId === project.id) {
+                      setDragOverProjId(null);
+                    }
+                  }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    if (!draggedProjId || draggedProjId === project.id) {
+                      setDragOverProjId(null);
+                      setDraggedProjId(null);
+                      return;
+                    }
+                    const srcIdx = projects.findIndex(p => p.id === draggedProjId);
+                    const dstIdx = projects.findIndex(p => p.id === project.id);
+                    if (srcIdx >= 0 && dstIdx >= 0) {
+                      reorderProjects(srcIdx, dstIdx);
+                    }
+                    setDraggedProjId(null);
+                    setDragOverProjId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedProjId(null);
+                    setDragOverProjId(null);
+                  }}
+                  className={`group/proj relative w-full flex items-center justify-between px-2 py-1.5 text-xs rounded-lg transition-all font-medium select-none ${
+                    isDragged
+                      ? 'opacity-40 scale-[0.98]'
+                      : isDragOver
+                      ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-950/50 shadow-sm'
+                      : isSelected
                       ? 'bg-slate-200 dark:bg-neutral-800 text-slate-900 dark:text-white font-semibold'
                       : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-900/60'
                   }`}
                 >
-                  <button
-                    onClick={() =>
-                      handleAction(() =>
-                        setFilters(prev => ({
-                          ...prev,
-                          selectedProjectId: isSelected ? 'ALL' : project.id,
-                        }))
-                      )
-                    }
-                    className="flex items-center gap-2 truncate flex-1 text-left min-w-0 cursor-pointer"
-                  >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="truncate">{project.name}</span>
-                  </button>
+                  <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
+                    {/* Drag Handle */}
+                    <div
+                      className="cursor-grab active:cursor-grabbing text-slate-300 dark:text-neutral-600 group-hover/proj:text-slate-500 dark:group-hover/proj:text-neutral-400 transition-colors shrink-0"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="w-3.5 h-3.5" />
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        handleAction(() =>
+                          setFilters(prev => ({
+                            ...prev,
+                            selectedProjectId: isSelected ? 'ALL' : project.id,
+                          }))
+                        )
+                      }
+                      className="flex items-center gap-2 truncate flex-1 text-left min-w-0 cursor-pointer"
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: project.color }}
+                      />
+                      <span className="truncate">{project.name}</span>
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-1 flex-shrink-0 ml-1">
                     {/* Action buttons revealed on hover */}
                     <div className="flex items-center gap-0.5 opacity-0 group-hover/proj:opacity-100 transition-opacity">
+                      {index > 0 && (
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            reorderProjects(index, index - 1);
+                          }}
+                          className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-neutral-700 transition cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ChevronUp className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                      {index < projects.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            reorderProjects(index, index + 1);
+                          }}
+                          className="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-neutral-700 transition cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ChevronDown className="w-2.5 h-2.5" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={e => {
