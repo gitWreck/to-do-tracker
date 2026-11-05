@@ -170,7 +170,7 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="h-screen h-[100dvh] bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200 overflow-hidden">
       {/* Top Dock Header */}
       <ActiveTaskDock
         onOpenCreateModal={() => {
@@ -185,7 +185,7 @@ function MainApp() {
       />
 
       {/* Main Workspace: Sidebar + Task Board / Calendar */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
         {/* Desktop Sidebar (hidden on mobile) */}
         <Sidebar />
 
@@ -216,7 +216,7 @@ function MainApp() {
           </div>
         </div>
 
-        <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-neutral-950">
+        <main className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-neutral-950">
           {filters.statusTab === 'CALENDAR' ? (
             <CalendarView onOpenCreateWithDate={handleOpenCreateWithDate} />
           ) : (

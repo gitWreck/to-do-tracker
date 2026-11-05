@@ -150,7 +150,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3.5 sm:py-5 max-w-6xl mx-auto w-full transition-colors">
+    <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 py-3.5 sm:py-5 max-w-6xl mx-auto w-full transition-colors">
       {/* Top Search & Filter Bar */}
       <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
         <div className="relative flex-1 min-w-0">

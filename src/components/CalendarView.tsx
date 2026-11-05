@@ -185,7 +185,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
   }, [tasks, year, month]);
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-57px)] overflow-hidden transition-colors">
+    <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden transition-colors">
       {/* Calendar Header Controls */}
       <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-slate-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/40 backdrop-blur-sm flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 sm:gap-3">

@@ -66,8 +66,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
       className={`${
         isMobileDrawer
           ? 'w-72 max-w-[85vw] h-full shadow-2xl border-r'
-          : 'hidden md:flex w-64 border-r h-[calc(100vh-57px)]'
-      } border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col select-none transition-colors`}
+          : 'hidden md:flex w-64 border-r shrink-0 sticky top-0 h-full self-stretch'
+      } border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col select-none transition-colors z-30`}
     >
       {/* Brand Header */}
       <div className="p-4 pb-0 flex items-center justify-between">

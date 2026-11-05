@@ -82,7 +82,7 @@ export const ActiveTaskDock: React.FC<ActiveTaskDockProps> = ({
   const userEmail = user?.email || '';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm transition-colors">
+    <header className="sticky top-0 z-40 w-full shrink-0 border-b border-slate-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm transition-colors">
       <div className="flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Mobile Drawer Trigger + Active Task or Idle Status */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
