@@ -127,10 +127,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   );
 
   // -----------------------------------------------------------------
-  // RIGHT-SIDE TIMER & CONTROLS COMPONENT
+  // TIMER CONTROL (Play/Pause/Time duration pill)
   // -----------------------------------------------------------------
-  const TimerAndControls = (
-    <div className="flex items-center gap-2 flex-shrink-0">
+  const TimerControl = (
+    <div className="flex items-center gap-1.5 flex-shrink-0">
       {/* Live stopwatch running state */}
       {isCurrentTaskRunning && activeTimer ? (
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 shadow-xs shadow-emerald-500/10 animate-pulse">
@@ -144,7 +144,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             onClick={stopTimer}
             title="Pause Stopwatch"
-            className="w-5 h-5 ml-0.5 rounded-full flex items-center justify-center bg-emerald-200/80 dark:bg-emerald-900/80 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/60 dark:hover:text-amber-300 text-emerald-800 dark:text-emerald-300 transition shadow-2xs"
+            className="w-5 h-5 ml-0.5 rounded-full flex items-center justify-center bg-emerald-200/80 dark:bg-emerald-900/80 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/60 dark:hover:text-amber-300 text-emerald-800 dark:text-emerald-300 transition shadow-2xs cursor-pointer"
           >
             <Pause className="w-2.5 h-2.5 fill-current" />
           </button>
@@ -160,7 +160,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <button
               onClick={() => startTimer(task.id)}
               title="Resume Timer on this task"
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-neutral-800/90 dark:hover:bg-emerald-600 dark:hover:text-white text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700/70 transition-colors shadow-2xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-neutral-800/90 dark:hover:bg-emerald-600 dark:hover:text-white text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700/70 transition-colors shadow-2xs cursor-pointer"
             >
               <Play className="w-3 h-3 fill-current ml-0.5" />
             </button>
@@ -172,30 +172,34 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           <button
             onClick={() => startTimer(task.id)}
             title="Start Timer on this task"
-            className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-neutral-800/80 dark:hover:bg-emerald-600 dark:hover:text-white text-slate-400 dark:text-neutral-500 border border-slate-200 dark:border-neutral-700/60 transition-colors shadow-2xs"
+            className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-neutral-800/80 dark:hover:bg-emerald-600 dark:hover:text-white text-slate-400 dark:text-neutral-500 border border-slate-200 dark:border-neutral-700/60 transition-colors shadow-2xs cursor-pointer"
           >
             <Play className="w-3 h-3 fill-current ml-0.5" />
           </button>
         )
       )}
+    </div>
+  );
 
-      {/* Quick Action Icons: Edit & Delete */}
-      <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <button
-          onClick={() => setIsEditingTitle(true)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition"
-          title="Edit Title"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => deleteTask(task.id)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:text-neutral-500 dark:hover:text-red-400 dark:hover:bg-red-950/40 transition"
-          title="Delete Task"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
+  // -----------------------------------------------------------------
+  // QUICK ACTION ICONS: Edit & Delete
+  // -----------------------------------------------------------------
+  const QuickActions = (
+    <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
+      <button
+        onClick={() => setIsEditingTitle(true)}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition cursor-pointer"
+        title="Edit Title"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => deleteTask(task.id)}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:text-neutral-500 dark:hover:text-red-400 dark:hover:bg-red-950/40 transition cursor-pointer"
+        title="Delete Task"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 
@@ -237,22 +241,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {getPriorityBadge(task.priority)}
-              <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => setIsEditingTitle(true)}
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition"
-                  title="Edit Title"
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:text-neutral-500 dark:hover:text-red-400 dark:hover:bg-red-950/40 transition"
-                  title="Delete Task"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
+              {QuickActions}
             </div>
           </div>
 
@@ -323,7 +312,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             )}
           </span>
 
-          {TimerAndControls}
+          {TimerControl}
         </div>
       </div>
     );
@@ -393,7 +382,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
                 onBlur={handleTitleSubmit}
                 className="flex-1 px-2 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
               />
-              <button type="submit" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+              <button type="submit" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
                 Done
               </button>
             </form>
@@ -442,7 +431,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
         </div>
 
         {/* Right-side Stopwatch, Duration Capsule & Quick Actions */}
-        {TimerAndControls}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {TimerControl}
+          {QuickActions}
+        </div>
       </div>
     </div>
   );
