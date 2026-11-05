@@ -284,16 +284,52 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
                 Priority
               </label>
-              <select
-                value={priority}
-                onChange={e => setPriority(e.target.value as TaskPriority)}
-                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
+              <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-neutral-950 p-1 rounded-xl border border-slate-200 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setPriority('LOW')}
+                  className={`py-1 text-xs rounded-lg font-medium transition ${
+                    priority === 'LOW'
+                      ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Low
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPriority('MEDIUM')}
+                  className={`py-1 text-xs rounded-lg font-medium transition ${
+                    priority === 'MEDIUM'
+                      ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Med
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPriority('HIGH')}
+                  className={`py-1 text-xs rounded-lg font-medium transition ${
+                    priority === 'HIGH'
+                      ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  High
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPriority('URGENT')}
+                  className={`py-1 text-xs rounded-lg font-medium transition ${
+                    priority === 'URGENT'
+                      ? 'bg-rose-600 text-white dark:bg-rose-600/30 dark:text-rose-300 dark:border dark:border-rose-500/50'
+                      : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Urgent
+                </button>
+              </div>
             </div>
           </div>
 

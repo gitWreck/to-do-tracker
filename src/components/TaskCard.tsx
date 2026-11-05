@@ -75,31 +75,62 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
     setIsEditing(false);
   };
 
+  const cyclePriority = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const priorities: Task['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+    const nextIdx = (priorities.indexOf(task.priority) + 1) % priorities.length;
+    updateTask(task.id, { priority: priorities[nextIdx] });
+  };
+
   const getPriorityBadge = (priority: Task['priority']) => {
     switch (priority) {
       case 'URGENT':
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-400 border border-red-200 dark:border-red-900/60 uppercase tracking-wider">
-            Urgent
-          </span>
+          <button
+            type="button"
+            onClick={cyclePriority}
+            title="Priority: Urgent (click to cycle)"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 uppercase tracking-wider hover:brightness-95 active:scale-95 transition cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>Urgent</span>
+          </button>
         );
       case 'HIGH':
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-400 border border-amber-200 dark:border-amber-900/60 uppercase tracking-wider">
-            High
-          </span>
+          <button
+            type="button"
+            onClick={cyclePriority}
+            title="Priority: High (click to cycle)"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 uppercase tracking-wider hover:brightness-95 active:scale-95 transition cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>High</span>
+          </button>
         );
       case 'MEDIUM':
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-md bg-slate-100 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700/60">
-            Med
-          </span>
+          <button
+            type="button"
+            onClick={cyclePriority}
+            title="Priority: Medium (click to cycle)"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 hover:brightness-95 active:scale-95 transition cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span>Med</span>
+          </button>
         );
       case 'LOW':
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-normal rounded-md bg-slate-50 text-slate-500 dark:bg-neutral-900 dark:text-neutral-400 border border-slate-200/60 dark:border-neutral-800">
-            Low
-          </span>
+          <button
+            type="button"
+            onClick={cyclePriority}
+            title="Priority: Low (click to cycle)"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 hover:brightness-95 active:scale-95 transition cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Low</span>
+          </button>
         );
     }
   };

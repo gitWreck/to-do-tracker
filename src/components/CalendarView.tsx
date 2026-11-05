@@ -50,6 +50,39 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
 
   const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
+  const getPriorityBadge = (priority: Task['priority']) => {
+    switch (priority) {
+      case 'URGENT':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-bold rounded bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>Urgent</span>
+          </span>
+        );
+      case 'HIGH':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-semibold rounded bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>High</span>
+          </span>
+        );
+      case 'MEDIUM':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-medium rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <span>Med</span>
+          </span>
+        );
+      case 'LOW':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 text-[9px] font-medium rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Low</span>
+          </span>
+        );
+    }
+  };
+
   // Aggregate tasks and time entries by date string (YYYY-MM-DD)
   const dateDataMap = useMemo(() => {
     const map = new Map<string, { tasks: Task[]; totalSeconds: number; completedCount: number }>();
@@ -417,6 +450,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
                           <span className="text-[10px] text-slate-500 dark:text-neutral-400">
                             {task.category}
                           </span>
+                          {getPriorityBadge(task.priority)}
                         </div>
 
                         <div
