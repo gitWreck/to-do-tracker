@@ -59,7 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
   const [draggedProjId, setDraggedProjId] = useState<string | null>(null);
-  const [dragOverProjId, setDragOverProjId] = useState<string | null>(null);
+  const [dragTarget, setDragTarget] = useState<{ id: string; edge: 'top' | 'bottom' } | null>(null);
 
   const startEditingProject = (p: { id: string; name: string; color: string }) => {
     setEditingProjectId(p.id);
@@ -334,7 +334,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
             </form>
           )}
 
-          <div className="space-y-1">
+          <div
+            className="space-y-1"
+            onDragLeave={e => {
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+              setDragTarget(null);
+            }}
+          >
             <button
               onClick={() => handleAction(() => setFilters(prev => ({ ...prev, selectedProjectId: 'ALL' })))}
               className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg transition font-medium ${
@@ -356,7 +362,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
               const isEditingThis = editingProjectId === project.id;
               const isDeletingThis = deletingProjectId === project.id;
               const isDragged = draggedProjId === project.id;
-              const isDragOver = dragOverProjId === project.id;
+              const isTargetTop = dragTarget?.id === project.id && dragTarget.edge === 'top';
+              const isTargetBottom = dragTarget?.id === project.id && dragTarget.edge === 'bottom';
 
               if (isEditingThis) {
                 return (
@@ -451,44 +458,76 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
                   onDragOver={e => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                    if (dragOverProjId !== project.id) {
-                      setDragOverProjId(project.id);
+                    if (!draggedProjId || draggedProjId === project.id) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const edge: 'top' | 'bottom' = e.clientY < rect.top + rect.height / 2 ? 'top' : 'bottom';
+                    if (!dragTarget || dragTarget.id !== project.id || dragTarget.edge !== edge) {
+                      setDragTarget({ id: project.id, edge });
                     }
                   }}
-                  onDragLeave={() => {
-                    if (dragOverProjId === project.id) {
-                      setDragOverProjId(null);
+                  onDragLeave={e => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    if (dragTarget?.id === project.id) {
+                      setDragTarget(null);
                     }
                   }}
                   onDrop={e => {
                     e.preventDefault();
                     if (!draggedProjId || draggedProjId === project.id) {
-                      setDragOverProjId(null);
+                      setDragTarget(null);
                       setDraggedProjId(null);
                       return;
                     }
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const edge: 'top' | 'bottom' =
+                      dragTarget?.id === project.id
+                        ? dragTarget.edge
+                        : e.clientY < rect.top + rect.height / 2
+                        ? 'top'
+                        : 'bottom';
+
                     const srcIdx = projects.findIndex(p => p.id === draggedProjId);
-                    const dstIdx = projects.findIndex(p => p.id === project.id);
+                    let dstIdx = projects.findIndex(p => p.id === project.id);
                     if (srcIdx >= 0 && dstIdx >= 0) {
-                      reorderProjects(srcIdx, dstIdx);
+                      if (edge === 'bottom') {
+                        dstIdx += 1;
+                      }
+                      if (srcIdx < dstIdx) {
+                        dstIdx -= 1;
+                      }
+                      if (srcIdx !== dstIdx) {
+                        reorderProjects(srcIdx, dstIdx);
+                      }
                     }
                     setDraggedProjId(null);
-                    setDragOverProjId(null);
+                    setDragTarget(null);
                   }}
                   onDragEnd={() => {
                     setDraggedProjId(null);
-                    setDragOverProjId(null);
+                    setDragTarget(null);
                   }}
-                  className={`group/proj relative w-full flex items-center justify-between px-2 py-1.5 text-xs rounded-lg transition-all font-medium select-none ${
+                  className={`group/proj relative w-full flex items-center justify-between px-2 py-1.5 text-xs rounded-lg transition font-medium select-none ${
                     isDragged
-                      ? 'opacity-40 scale-[0.98]'
-                      : isDragOver
-                      ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-950/50 shadow-sm'
+                      ? 'opacity-30 scale-[0.98]'
                       : isSelected
                       ? 'bg-slate-200 dark:bg-neutral-800 text-slate-900 dark:text-white font-semibold'
                       : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-900/60'
                   }`}
                 >
+                  {/* Insertion Line (Top between projects) */}
+                  {isTargetTop && (
+                    <div className="absolute -top-[3px] left-0 right-0 h-[2px] bg-indigo-500 rounded-full z-20 pointer-events-none flex items-center shadow-[0_0_8px_rgba(99,102,241,0.6)]">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 -ml-1 ring-2 ring-white dark:ring-neutral-900 shadow-xs" />
+                    </div>
+                  )}
+
+                  {/* Insertion Line (Bottom between projects) */}
+                  {isTargetBottom && (
+                    <div className="absolute -bottom-[3px] left-0 right-0 h-[2px] bg-indigo-500 rounded-full z-20 pointer-events-none flex items-center shadow-[0_0_8px_rgba(99,102,241,0.6)]">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 -ml-1 ring-2 ring-white dark:ring-neutral-900 shadow-xs" />
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
                     {/* Drag Handle */}
                     <div
