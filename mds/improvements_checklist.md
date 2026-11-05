@@ -59,15 +59,15 @@ Use this checklist to track and select upcoming enhancements for **DevTracker**.
 
 ---
 
-## 🗃️ 4. Task Management & Archive Navigation
+## 🗃️ 4. Task Management & Archive Navigation (Completed ✅)
 
-- [ ] **Dedicated "Archived Tasks" Tab in Sidebar**
-  - Create an "Archived" section in the sidebar to browse all archived tasks.
+- [x] **Dedicated "Archived Tasks" Tab in Sidebar**
+  - Create an "Archived" section in the sidebar to browse all archived tasks with counter badge.
   - Allows inspecting historical hours on old tasks, with an **[Unarchive / Restore]** button to revive tasks back to the active board if needed.
 
-- [ ] **Task Reordering & "Priority Pinning" (Today's Top 3)**
-  - Drag-and-drop task sorting within the Today section.
-  - Star or pin up to 3 high-impact tasks to the top of the day ("The Big 3" / "Eat the Frog").
+- [x] **Task Reordering & "Priority Pinning" (Today's Top 3)**
+  - Drag-and-drop task sorting within task lists with glowing insertion indicator lines.
+  - Star or pin up to 3 high-impact tasks to the top of the day ("The Big 3" / "Eat the Frog") with golden focus banner and visual status pills.
 
 ---
 

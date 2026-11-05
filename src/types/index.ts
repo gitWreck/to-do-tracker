@@ -25,6 +25,7 @@ export interface Task {
 
   // Status & Lifecycle
   status: TaskStatus;
+  isPinned?: boolean;      // Top 3 priority focus pinning
   createdAt: string;       // ISO Timestamp
   dueDate?: string;        // YYYY-MM-DD
   completedAt?: string;    // ISO Timestamp when marked DONE
@@ -43,7 +44,7 @@ export interface Project {
 }
 
 export type ViewLayout = 'LIST' | 'GRID';
-export type NavigationTab = 'PENDING' | 'CALENDAR' | 'COMPLETED';
+export type NavigationTab = 'PENDING' | 'CALENDAR' | 'COMPLETED' | 'ARCHIVED';
 
 export interface FilterState {
   searchQuery: string;

@@ -23,6 +23,7 @@ import {
   GripVertical,
   ChevronUp,
   ChevronDown,
+  Archive,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -81,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
   // Compute counts
   const pendingCount = tasks.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
   const completedCount = tasks.filter(t => t.status === 'COMPLETED').length;
+  const archivedCount = tasks.filter(t => t.status === 'ARCHIVED').length;
 
   // Extract all distinct tags from tasks
   const allTags = Array.from(
@@ -222,6 +224,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile, isMobileDrawer 
               </div>
               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300">
                 {completedCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleAction(() => setFilters(prev => ({ ...prev, statusTab: 'ARCHIVED' })))}
+              className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl transition ${
+                filters.statusTab === 'ARCHIVED'
+                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-600/20 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-semibold shadow-xs'
+                  : 'text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-900 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Archive className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Archived Tasks</span>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300">
+                {archivedCount}
               </span>
             </button>
           </div>

@@ -13,7 +13,9 @@ import {
   LayoutList,
   LayoutGrid,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Archive,
+  Star,
 } from 'lucide-react';
 
 interface TaskListProps {
@@ -22,14 +24,18 @@ interface TaskListProps {
 
 export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
   const {
+    tasks,
     filteredTasks,
     projects,
     filters,
     setFilters,
     createTask,
+    reorderTasks,
   } = useTasks();
 
   const [quickTitle, setQuickTitle] = useState('');
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [taskDragTarget, setTaskDragTarget] = useState<{ id: string; edge: 'top' | 'bottom' } | null>(null);
 
   const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
@@ -48,12 +54,48 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
   };
 
   const isCompletedTab = filters.statusTab === 'COMPLETED';
+  const isArchivedTab = filters.statusTab === 'ARCHIVED';
   const isGrid = filters.layoutStyle === 'GRID';
   const todayStr = getTodayDateString();
 
-  // Group tasks by date for both PENDING/Today and COMPLETED History
+  // Pinned top focus tasks for Today ("The Big 3")
+  const pinnedTasks = useMemo(() => {
+    if (isCompletedTab || isArchivedTab) return [];
+    return filteredTasks.filter(t => t.isPinned);
+  }, [filteredTasks, isCompletedTab, isArchivedTab]);
+
+  // Group tasks by date for PENDING, COMPLETED, and ARCHIVED views
   const groupedSections = useMemo(() => {
-    if (isCompletedTab) {
+    if (isArchivedTab) {
+      // Archived groups (grouped by createdAt date, newest first)
+      const groups: Record<
+        string,
+        {
+          label: string;
+          tasks: typeof filteredTasks;
+          badge?: string;
+          badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming';
+          sortOrder: number;
+        }
+      > = {};
+
+      filteredTasks.forEach(task => {
+        const dateKey = task.createdAt ? task.createdAt.split('T')[0] : 'Historical';
+        if (!groups[dateKey]) {
+          const meta = getDateGroupMeta(dateKey);
+          groups[dateKey] = {
+            label: meta.label,
+            badge: 'Archived',
+            badgeType: 'today',
+            sortOrder: meta.sortOrder,
+            tasks: [],
+          };
+        }
+        groups[dateKey].tasks.push(task);
+      });
+
+      return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+    } else if (isCompletedTab) {
       // Completed history groups (grouped by completedAt date)
       const groups: Record<
         string,
@@ -121,7 +163,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
         return a[0].localeCompare(b[0]);
       });
     }
-  }, [filteredTasks, isCompletedTab, todayStr]);
+  }, [filteredTasks, isCompletedTab, isArchivedTab, todayStr]);
 
   const getSectionBadgeStyle = (badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming') => {
     switch (badgeType) {
@@ -202,7 +244,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
       </div>
 
       {/* Quick Add Bar (Only on Pending tab) */}
-      {!isCompletedTab && (
+      {!isCompletedTab && !isArchivedTab && (
         <form onSubmit={handleQuickAdd} className="mb-6">
           <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-neutral-900/80 border border-slate-200 dark:border-neutral-800 rounded-xl shadow-xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition">
             <input
@@ -232,15 +274,55 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
         </form>
       )}
 
+      {/* 🎯 The Big 3 (Today's Top Focus Tasks) */}
+      {!isCompletedTab && !isArchivedTab && pinnedTasks.length > 0 && (
+        <div className="p-3.5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-2xl border border-amber-300 dark:border-amber-800/80 mb-6 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-amber-500 text-white font-bold text-xs shadow-xs">
+                ★
+              </span>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  The Big 3 — Today's Focus
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+                  High-impact priorities ({pinnedTasks.length}/3 pinned). Star any task to focus here.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3' : 'space-y-2.5'}>
+            {pinnedTasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                project={projectMap.get(task.projectId)}
+                variant={isGrid ? 'grid' : 'list'}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* List Header */}
       <div className="flex items-center justify-between mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
         <div className="flex items-center gap-2">
-          {isCompletedTab ? (
+          {isArchivedTab ? (
+            <Archive className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          ) : isCompletedTab ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           ) : (
             <ListTodo className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           )}
-          <span>{isCompletedTab ? 'Completed Accomplishments' : 'Pending & Active Tasks'}</span>
+          <span>
+            {isArchivedTab
+              ? 'Archived Tasks Vault'
+              : isCompletedTab
+              ? 'Completed Accomplishments'
+              : 'Pending & Active Tasks'}
+          </span>
         </div>
         <span>{filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}</span>
       </div>
@@ -249,19 +331,31 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
       {filteredTasks.length === 0 ? (
         <div className="py-16 text-center border border-dashed border-slate-300 dark:border-neutral-800 rounded-2xl bg-slate-50/50 dark:bg-neutral-900/20">
           <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-3 text-slate-400 dark:text-neutral-600">
-            {isCompletedTab ? <Inbox className="w-6 h-6" /> : <Sparkles className="w-6 h-6 text-amber-500" />}
+            {isArchivedTab ? (
+              <Archive className="w-6 h-6 text-purple-500" />
+            ) : isCompletedTab ? (
+              <Inbox className="w-6 h-6" />
+            ) : (
+              <Sparkles className="w-6 h-6 text-amber-500" />
+            )}
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-neutral-300">
-            {isCompletedTab ? 'No completed tasks found' : 'All caught up!'}
+            {isArchivedTab
+              ? 'No archived tasks found'
+              : isCompletedTab
+              ? 'No completed tasks found'
+              : 'All caught up!'}
           </h3>
           <p className="text-xs text-slate-500 dark:text-neutral-500 mt-1 max-w-sm mx-auto">
-            {isCompletedTab
+            {isArchivedTab
+              ? 'Archived tasks preserve historical logged hours for reports while keeping active boards clean.'
+              : isCompletedTab
               ? 'Complete tasks from the pending list to build your accomplishment log.'
               : 'Add your high-priority items above or start a stopwatch to begin your workday.'}
           </p>
         </div>
       ) : (
-        /* Date-Divided Sections (Both Pending & Completed) */
+        /* Date-Divided Sections (Pending, Completed, & Archived) */
         <div className="space-y-7">
           {groupedSections.map(([dateKey, group]) => (
             <div key={dateKey} className="space-y-3">
@@ -289,16 +383,100 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
                 </span>
               </div>
 
-              {/* Task Items (List or Grid/Cards layout) */}
-              <div className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2.5'}>
-                {group.tasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    project={projectMap.get(task.projectId)}
-                    variant={isGrid ? 'grid' : 'list'}
-                  />
-                ))}
+              {/* Task Items (List or Grid/Cards layout with drag-and-drop) */}
+              <div
+                className={isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5' : 'space-y-2.5'}
+                onDragLeave={e => {
+                  if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                  setTaskDragTarget(null);
+                }}
+              >
+                {group.tasks.map(task => {
+                  const isDragged = draggedTaskId === task.id;
+                  const isTargetTop = taskDragTarget?.id === task.id && taskDragTarget.edge === 'top';
+                  const isTargetBottom = taskDragTarget?.id === task.id && taskDragTarget.edge === 'bottom';
+                  const canDrag = !isCompletedTab && !isArchivedTab;
+
+                  return (
+                    <div
+                      key={task.id}
+                      draggable={canDrag}
+                      onDragStart={e => {
+                        if (!canDrag) return;
+                        e.dataTransfer.setData('text/plain', task.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggedTaskId(task.id);
+                      }}
+                      onDragOver={e => {
+                        if (!canDrag || !draggedTaskId || draggedTaskId === task.id) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const edge: 'top' | 'bottom' =
+                          e.clientY < rect.top + rect.height / 2 ? 'top' : 'bottom';
+                        if (!taskDragTarget || taskDragTarget.id !== task.id || taskDragTarget.edge !== edge) {
+                          setTaskDragTarget({ id: task.id, edge });
+                        }
+                      }}
+                      onDragLeave={e => {
+                        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                        if (taskDragTarget?.id === task.id) {
+                          setTaskDragTarget(null);
+                        }
+                      }}
+                      onDrop={e => {
+                        if (!canDrag || !draggedTaskId || draggedTaskId === task.id) return;
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const edge: 'top' | 'bottom' =
+                          taskDragTarget?.id === task.id
+                            ? taskDragTarget.edge
+                            : e.clientY < rect.top + rect.height / 2
+                            ? 'top'
+                            : 'bottom';
+
+                        const srcIdx = tasks.findIndex(t => t.id === draggedTaskId);
+                        let dstIdx = tasks.findIndex(t => t.id === task.id);
+                        if (srcIdx >= 0 && dstIdx >= 0) {
+                          if (edge === 'bottom') dstIdx += 1;
+                          if (srcIdx < dstIdx) dstIdx -= 1;
+                          if (srcIdx !== dstIdx) {
+                            reorderTasks(srcIdx, dstIdx);
+                          }
+                        }
+                        setDraggedTaskId(null);
+                        setTaskDragTarget(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedTaskId(null);
+                        setTaskDragTarget(null);
+                      }}
+                      className={`relative transition-all ${
+                        isDragged ? 'opacity-30 scale-[0.99]' : ''
+                      }`}
+                    >
+                      {/* Insertion line top */}
+                      {isTargetTop && (
+                        <div className="absolute -top-[3px] left-0 right-0 h-[2px] bg-indigo-500 rounded-full z-20 pointer-events-none flex items-center shadow-[0_0_8px_rgba(99,102,241,0.6)]">
+                          <div className="w-2 h-2 rounded-full bg-indigo-500 -ml-1 ring-2 ring-white dark:ring-neutral-900 shadow-xs" />
+                        </div>
+                      )}
+
+                      {/* Insertion line bottom */}
+                      {isTargetBottom && (
+                        <div className="absolute -bottom-[3px] left-0 right-0 h-[2px] bg-indigo-500 rounded-full z-20 pointer-events-none flex items-center shadow-[0_0_8px_rgba(99,102,241,0.6)]">
+                          <div className="w-2 h-2 rounded-full bg-indigo-500 -ml-1 ring-2 ring-white dark:ring-neutral-900 shadow-xs" />
+                        </div>
+                      )}
+
+                      <TaskCard
+                        task={task}
+                        project={projectMap.get(task.projectId)}
+                        variant={isGrid ? 'grid' : 'list'}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}

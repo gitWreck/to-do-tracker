@@ -76,6 +76,9 @@ interface TaskContextType {
     endTime: string;   // HH:MM
     markCompleted: boolean;
   }) => void;
+  unarchiveTask: (taskId: string) => void;
+  togglePinTask: (taskId: string) => void;
+  reorderTasks: (startIndex: number, endIndex: number) => void;
   createProject: (name: string, color: string) => Project;
   updateProject: (projectId: string, updates: { name?: string; color?: string }) => void;
   deleteProject: (projectId: string) => void;
@@ -689,6 +692,84 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  // Unarchive task: restore from archive back to active PENDING board
+  const unarchiveTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const restoredTask: Task = { ...task, status: 'PENDING' };
+    setTasks(prev => prev.map(t => (t.id === taskId ? restoredTask : t)));
+
+    if (user && isAuthorized && !isOfflineMode) {
+      syncTaskToCloud(user.id, restoredTask);
+    }
+
+    setToast({
+      id: `unarchive-${Date.now()}`,
+      message: `Restored "${task.title}" to active board`,
+      undoAction: () => {
+        setTasks(prev => prev.map(t => (t.id === taskId ? task : t)));
+        if (user && isAuthorized && !isOfflineMode) {
+          syncTaskToCloud(user.id, task);
+        }
+      },
+    });
+  };
+
+  // Star/pin task to Today's Top 3 ("The Big 3")
+  const togglePinTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (!task.isPinned) {
+      // Check count of currently pinned tasks
+      const currentPinnedCount = tasks.filter(
+        t => t.isPinned && t.status !== 'ARCHIVED' && t.status !== 'COMPLETED'
+      ).length;
+      if (currentPinnedCount >= 3) {
+        setToast({
+          id: `pin-limit-${Date.now()}`,
+          message: 'Only 3 priority tasks can be pinned to "The Big 3". Unpin one first!',
+        });
+        return;
+      }
+    }
+
+    const nextPinned = !task.isPinned;
+    const updatedTask: Task = { ...task, isPinned: nextPinned };
+    setTasks(prev => prev.map(t => (t.id === taskId ? updatedTask : t)));
+
+    if (user && isAuthorized && !isOfflineMode) {
+      syncTaskToCloud(user.id, updatedTask);
+    }
+
+    try {
+      const pinnedIds = tasks
+        .map(t => (t.id === taskId ? { id: t.id, isPinned: nextPinned } : { id: t.id, isPinned: t.isPinned }))
+        .filter(t => t.isPinned)
+        .map(t => t.id);
+      localStorage.setItem('devtracker_pinned_tasks_v1', JSON.stringify(pinnedIds));
+    } catch {
+      // ignore
+    }
+
+    setToast({
+      id: `pin-${Date.now()}`,
+      message: nextPinned ? `Pinned "${task.title}" to The Big 3 ⭐` : `Unpinned "${task.title}"`,
+    });
+  };
+
+  // Reorder tasks within active view
+  const reorderTasks = (startIndex: number, endIndex: number) => {
+    if (startIndex === endIndex) return;
+    setTasks(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(startIndex, 1);
+      next.splice(endIndex, 0, moved);
+      return next;
+    });
+  };
+
   // Confirm permanent deletion from local & Supabase database
   const confirmPermanentDelete = (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
@@ -936,6 +1017,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       else if (filters.statusTab === 'CALENDAR') {
         if (task.status === 'ARCHIVED') return false;
       }
+      // In ARCHIVED view, include only archived tasks
+      else if (filters.statusTab === 'ARCHIVED') {
+        if (task.status !== 'ARCHIVED') return false;
+      }
 
       // Project filter
       if (filters.selectedProjectId !== 'ALL' && task.projectId !== filters.selectedProjectId) {
@@ -994,6 +1079,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         confirmPermanentDelete,
         cancelTaskDelete,
         archiveTask,
+        unarchiveTask,
+        togglePinTask,
+        reorderTasks,
         toast,
         dismissToast,
         startTimer,

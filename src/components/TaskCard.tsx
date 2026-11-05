@@ -14,6 +14,9 @@ import {
   Hash,
   Clock,
   Calendar,
+  Star,
+  Archive,
+  RotateCcw,
 } from 'lucide-react';
 
 interface TaskCardProps {
@@ -30,6 +33,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
     toggleTaskComplete,
     updateTask,
     deleteTask,
+    unarchiveTask,
+    togglePinTask,
   } = useTasks();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -39,6 +44,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
   const isCurrentTaskRunning = activeTimer?.taskId === task.id;
   const isCompleted = task.status === 'COMPLETED';
+  const isArchived = task.status === 'ARCHIVED';
+  const isPinned = !!task.isPinned && !isCompleted && !isArchived;
   const dateSpan = getTaskDateSpan(task);
 
   // Total duration including live active timer elapsed seconds if this task is active
@@ -164,7 +171,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   // -----------------------------------------------------------------
   // LEFT-SIDE CHECKBOX COMPONENT
   // -----------------------------------------------------------------
-  const CheckboxIcon = (
+  const CheckboxIcon = isArchived ? (
+    <div
+      className="flex items-center justify-center w-5 h-5 rounded-md bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 flex-shrink-0"
+      title="Archived Task"
+    >
+      <Archive className="w-3.5 h-3.5" />
+    </div>
+  ) : (
     <button
       onClick={() => toggleTaskComplete(task.id)}
       className={`relative group/check flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-150 flex-shrink-0 cursor-pointer shadow-2xs ${isCompleted
@@ -211,7 +225,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <Clock className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
             {formatDurationCompact(totalSeconds)}
           </span>
-          {!isCompleted && (
+          {!isCompleted && !isArchived && (
             <button
               onClick={() => startTimer(task.id)}
               title="Resume Timer on this task"
@@ -223,7 +237,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
         </div>
       ) : (
         /* Idle with 0 seconds */
-        !isCompleted && (
+        !isCompleted && !isArchived && (
           <button
             onClick={() => startTimer(task.id)}
             title="Start Timer on this task"
@@ -237,21 +251,52 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   );
 
   // -----------------------------------------------------------------
-  // QUICK ACTION ICONS: Edit & Delete
+  // QUICK ACTION ICONS: Restore, Star (Top 3), Edit & Delete
   // -----------------------------------------------------------------
   const QuickActions = (
     <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
-      <button
-        onClick={() => {
-          setEditedTitle(task.title);
-          setEditedDescription(task.description || '');
-          setIsEditing(true);
-        }}
-        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition cursor-pointer"
-        title="Edit Task & Description"
-      >
-        <Pencil className="w-3.5 h-3.5" />
-      </button>
+      {isArchived ? (
+        <button
+          onClick={() => unarchiveTask(task.id)}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:hover:bg-purple-900/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition cursor-pointer"
+          title="Restore task to active board"
+        >
+          <RotateCcw className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+          <span className="text-[11px]">Restore</span>
+        </button>
+      ) : (
+        <>
+          {!isCompleted && (
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                togglePinTask(task.id);
+              }}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer ${
+                task.isPinned
+                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-300 dark:ring-amber-800'
+                  : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50 dark:text-neutral-600 dark:hover:text-amber-400 dark:hover:bg-neutral-800'
+              }`}
+              title={task.isPinned ? "Unpin from Today's Top 3" : "Pin to Today's Top 3 (The Big 3)"}
+            >
+              <Star className={`w-3.5 h-3.5 ${task.isPinned ? 'fill-amber-400 text-amber-500' : ''}`} />
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              setEditedTitle(task.title);
+              setEditedDescription(task.description || '');
+              setIsEditing(true);
+            }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition cursor-pointer"
+            title="Edit Task & Description"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+        </>
+      )}
+
       <button
         onClick={() => deleteTask(task.id)}
         className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:text-neutral-500 dark:hover:text-red-400 dark:hover:bg-red-950/40 transition cursor-pointer"
@@ -268,12 +313,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   if (variant === 'grid') {
     return (
       <div
-        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${isCurrentTaskRunning
+        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${
+          isCurrentTaskRunning
             ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
+            : isArchived
+            ? 'bg-slate-50/60 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
             : isCompleted
-              ? 'bg-slate-50/80 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
-              : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/70 dark:hover:bg-neutral-900/95 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
-          }`}
+            ? 'bg-slate-50/80 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
+            : isPinned
+            ? 'bg-gradient-to-br from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-neutral-900/80 dark:to-neutral-900/80 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/40 shadow-xs'
+            : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/70 dark:hover:bg-neutral-900/95 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
+        }`}
       >
         {/* Left vertical color accent border */}
         <div
@@ -296,6 +346,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
               <span className="text-[11px] font-medium text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-md">
                 {task.category}
               </span>
+              {isPinned && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-300 dark:border-amber-800 shadow-2xs">
+                  <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                  <span>Top 3</span>
+                </span>
+              )}
+              {isArchived && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-1.5 py-0.5 rounded-md border border-purple-300 dark:border-purple-800 shadow-2xs">
+                  <Archive className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                  <span>Archived</span>
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -416,12 +478,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   // -------------------------------------------------------------
   return (
     <div
-      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${isCurrentTaskRunning
+      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${
+        isCurrentTaskRunning
           ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
+          : isArchived
+          ? 'bg-slate-50/60 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
           : isCompleted
-            ? 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
-            : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/90 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
-        }`}
+          ? 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
+          : isPinned
+          ? 'bg-gradient-to-r from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-neutral-900/80 dark:to-neutral-900/80 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/40 shadow-xs'
+          : 'bg-white hover:bg-slate-50/90 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/90 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 shadow-xs'
+      }`}
     >
       {/* Left vertical color accent bar */}
       <div
@@ -449,6 +516,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <span className="text-[11px] font-medium text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-md">
               {task.category}
             </span>
+
+            {isPinned && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-300 dark:border-amber-800 shadow-2xs">
+                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                <span>Top 3</span>
+              </span>
+            )}
+
+            {isArchived && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-1.5 py-0.5 rounded-md border border-purple-300 dark:border-purple-800 shadow-2xs">
+                <Archive className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                <span>Archived</span>
+              </span>
+            )}
 
             {getLocationBadge(task.location)}
             {getPriorityBadge(task.priority)}
