@@ -22,7 +22,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [location, setLocation] = useState<WorkLocation>('OFFICE');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
   const [startDate, setStartDate] = useState(initialDate || getTodayDateString());
-  const [dueDate, setDueDate] = useState(initialDate || getTodayDateString());
+  const [dueDate, setDueDate] = useState(initialDate || '');
   const [tagsInput, setTagsInput] = useState('');
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       location,
       priority,
       createdAt: startIso,
-      dueDate,
+      dueDate: dueDate ? dueDate : undefined,
       tags: extraTags,
     });
 
@@ -278,12 +278,27 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                 <span className="text-[10px] text-slate-500 dark:text-neutral-400 mr-1">Presets:</span>
                 <button
                   type="button"
+                  onClick={() => setDueDate('')}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition ${
+                    !dueDate
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
+                  }`}
+                >
+                  No Due Date
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     const today = getTodayDateString();
                     setStartDate(today);
                     setDueDate(today);
                   }}
-                  className="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400 transition"
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition ${
+                    dueDate === startDate
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
+                  }`}
                 >
                   1 Day
                 </button>
@@ -338,9 +353,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
               </div>
 
               <div>
-                <span className="block text-[11px] font-medium text-slate-600 dark:text-neutral-400 mb-1">
-                  Target Due Date
-                </span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="block text-[11px] font-medium text-slate-600 dark:text-neutral-400">
+                    Target Due Date
+                  </span>
+                  {dueDate && (
+                    <button
+                      type="button"
+                      onClick={() => setDueDate('')}
+                      className="text-[10px] text-red-500 hover:text-red-700 hover:underline cursor-pointer"
+                    >
+                      Clear (No Due)
+                    </button>
+                  )}
+                </div>
                 <input
                   type="date"
                   value={dueDate}
@@ -352,7 +378,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Date Span Preview Indicator */}
-            {startDate && dueDate && (
+            {startDate && dueDate ? (
               <div className="text-[11px] text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between">
                 <span>
                   {startDate === dueDate ? (
@@ -366,6 +392,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                 <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
                   {startDate === dueDate ? startDate : `${startDate} \u2192 ${dueDate}`}
                 </span>
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-500 dark:text-neutral-400 bg-slate-100/60 dark:bg-neutral-900/40 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-neutral-800/60 flex items-center justify-between">
+                <span>No target due date scheduled (open backlog task)</span>
+                <span className="text-[10px] text-slate-400">Backlog</span>
               </div>
             )}
           </div>

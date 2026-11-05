@@ -229,10 +229,10 @@ export function getTaskDateSpan(task: {
     }
   }
 
-  // 4. Default: Created date
+  // 4. Default: No due date scheduled
   return {
-    display: formatShortDate(createdDate),
-    tooltip: `Created on ${formatFullDate(createdDate)} at ${formatTime(createdDate)}`,
+    display: 'No due date',
+    tooltip: `Created on ${formatFullDate(createdDate)} at ${formatTime(createdDate)} • No target due date scheduled`,
     isMultiDay: false,
     daySpan: 1,
     type: 'pending-created',
@@ -255,6 +255,16 @@ export interface DateGroupMeta {
 }
 
 export function getDateGroupMeta(dateStr: string): DateGroupMeta {
+  if (dateStr === 'NO_DUE_DATE' || !dateStr) {
+    return {
+      key: 'NO_DUE_DATE',
+      label: 'No Due Date (Backlog)',
+      badge: 'No Due Date',
+      badgeType: 'upcoming',
+      sortOrder: 4,
+    };
+  }
+
   const today = getTodayDateString();
   const yesterday = getYesterdayDateString();
 

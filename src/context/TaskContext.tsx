@@ -626,7 +626,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: data.createdAt || new Date().toISOString(),
       timeEntries: [],
       totalDurationSeconds: 0,
-      dueDate: data.dueDate || getTodayDateString(),
+      dueDate: data.dueDate ? data.dueDate : undefined,
     };
 
     setTasks(prev => [newTask, ...prev]);

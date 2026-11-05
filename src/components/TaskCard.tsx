@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
-import { Task, Project } from '@/types';
+import { Task, Project, TaskCategory, WorkLocation, TaskPriority } from '@/types';
 import { useTasks } from '@/context/TaskContext';
-import { formatDuration, formatDurationCompact, getTaskDateSpan } from '@/lib/time';
+import {
+  formatDuration,
+  formatDurationCompact,
+  getTaskDateSpan,
+  getTodayDateString,
+} from '@/lib/time';
 import {
   Play,
   Pause,
@@ -27,6 +32,7 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'list' }) => {
   const {
+    projects,
     activeTimer,
     startTimer,
     stopTimer,
@@ -40,6 +46,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedDescription, setEditedDescription] = useState(task.description || '');
+  const [editedProjectId, setEditedProjectId] = useState(task.projectId);
+  const [editedCategory, setEditedCategory] = useState<TaskCategory>(task.category);
+  const [editedLocation, setEditedLocation] = useState<WorkLocation>(task.location);
+  const [editedPriority, setEditedPriority] = useState<TaskPriority>(task.priority);
+  const [editedDueDate, setEditedDueDate] = useState<string>(task.dueDate || '');
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const isCurrentTaskRunning = activeTimer?.taskId === task.id;
@@ -47,6 +58,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   const isArchived = task.status === 'ARCHIVED';
   const isPinned = !!task.isPinned && !isCompleted && !isArchived;
   const dateSpan = getTaskDateSpan(task);
+
+  const startEditing = () => {
+    setEditedTitle(task.title);
+    setEditedDescription(task.description || '');
+    setEditedProjectId(task.projectId);
+    setEditedCategory(task.category);
+    setEditedLocation(task.location);
+    setEditedPriority(task.priority);
+    setEditedDueDate(task.dueDate || '');
+    setIsEditing(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editedTitle.trim()) return;
+
+    updateTask(task.id, {
+      title: editedTitle.trim(),
+      description: editedDescription.trim() || undefined,
+      projectId: editedProjectId,
+      category: editedCategory,
+      location: editedLocation,
+      priority: editedPriority,
+      dueDate: editedDueDate.trim() ? editedDueDate.trim() : undefined,
+    });
+    setIsEditing(false);
+  };
 
   // Total duration including live active timer elapsed seconds if this task is active
   const totalSeconds = isCurrentTaskRunning && activeTimer
@@ -71,16 +109,156 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
     </span>
   );
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editedTitle.trim()) {
-      updateTask(task.id, {
-        title: editedTitle.trim(),
-        description: editedDescription.trim() || undefined,
-      });
-    }
-    setIsEditing(false);
-  };
+  const EditForm = (
+    <form onSubmit={handleEditSubmit} className="space-y-3">
+      {/* Title */}
+      <div>
+        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+          Task Title *
+        </label>
+        <input
+          type="text"
+          value={editedTitle}
+          onChange={e => setEditedTitle(e.target.value)}
+          autoFocus
+          placeholder="Task title..."
+          className="w-full px-2.5 py-1.5 text-xs sm:text-sm bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 shadow-2xs"
+        />
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+          Description / Notes
+        </label>
+        <textarea
+          value={editedDescription}
+          onChange={e => setEditedDescription(e.target.value)}
+          placeholder="Description / notes (Enter for new line)..."
+          rows={3}
+          className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 resize-y"
+        />
+      </div>
+
+      {/* Project & Category Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+            Project
+          </label>
+          <select
+            value={editedProjectId}
+            onChange={e => setEditedProjectId(e.target.value)}
+            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+          >
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+            Category
+          </label>
+          <select
+            value={editedCategory}
+            onChange={e => setEditedCategory(e.target.value as TaskCategory)}
+            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+          >
+            <option value="PROGRAMMING">Programming</option>
+            <option value="ADMIN">Admin Task</option>
+            <option value="MEETING">Meeting</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Work Context, Priority & Due Date Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+            Work Context
+          </label>
+          <select
+            value={editedLocation}
+            onChange={e => setEditedLocation(e.target.value as WorkLocation)}
+            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+          >
+            <option value="OFFICE">Office</option>
+            <option value="HOME">Home</option>
+            <option value="FIELD">Field</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 mb-1">
+            Priority
+          </label>
+          <select
+            value={editedPriority}
+            onChange={e => setEditedPriority(e.target.value as TaskPriority)}
+            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+          >
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
+              Due Date
+            </label>
+            {editedDueDate ? (
+              <button
+                type="button"
+                onClick={() => setEditedDueDate('')}
+                className="text-[10px] text-red-500 hover:text-red-700 hover:underline cursor-pointer"
+              >
+                Clear (No Due)
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditedDueDate(getTodayDateString())}
+                className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              >
+                + Set Today
+              </button>
+            )}
+          </div>
+          <input
+            type="date"
+            value={editedDueDate}
+            onChange={e => setEditedDueDate(e.target.value)}
+            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Form Action Buttons */}
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-neutral-800">
+        <button
+          type="button"
+          onClick={() => setIsEditing(false)}
+          className="px-3 py-1 text-xs text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white rounded hover:bg-slate-200/50 dark:hover:bg-neutral-800 transition cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-3.5 py-1 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-xs transition cursor-pointer"
+        >
+          Save Changes
+        </button>
+      </div>
+    </form>
+  );
 
   const cyclePriority = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -284,13 +462,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           )}
 
           <button
-            onClick={() => {
-              setEditedTitle(task.title);
-              setEditedDescription(task.description || '');
-              setIsEditing(true);
-            }}
+            onClick={startEditing}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-neutral-500 dark:hover:text-indigo-400 dark:hover:bg-neutral-800 transition cursor-pointer"
-            title="Edit Task & Description"
+            title="Edit Task"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -311,6 +485,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   // GRID / CARD STYLE VARIANT
   // -------------------------------------------------------------
   if (variant === 'grid') {
+    if (isEditing) {
+      return (
+        <div className="relative rounded-2xl border-2 border-indigo-500 bg-white dark:bg-neutral-900 p-4 shadow-lg overflow-hidden">
+          <div
+            className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
+            style={{ backgroundColor: project?.color || '#3b82f6' }}
+          />
+          <div className="pl-2">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                Edit Task
+              </span>
+            </div>
+            {EditForm}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${
@@ -371,63 +564,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
             <div className="mt-0.5">{CheckboxIcon}</div>
 
             <div className="flex-1 min-w-0">
-              {isEditing ? (
-                <form onSubmit={handleEditSubmit} className="space-y-2">
-                  <input
-                    type="text"
-                    value={editedTitle}
-                    onChange={e => setEditedTitle(e.target.value)}
-                    autoFocus
-                    placeholder="Task title..."
-                    className="w-full px-2.5 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
-                  />
-                  <textarea
-                    value={editedDescription}
-                    onChange={e => setEditedDescription(e.target.value)}
-                    placeholder="Description / notes (Enter for new line)..."
-                    rows={3}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 resize-y"
-                  />
-                  <div className="flex items-center justify-end gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setEditedTitle(task.title);
-                        setEditedDescription(task.description || '');
-                      }}
-                      className="px-2 py-0.5 text-xs text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-2.5 py-0.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded shadow-xs cursor-pointer"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <h4
-                  onDoubleClick={() => {
-                    setEditedTitle(task.title);
-                    setEditedDescription(task.description || '');
-                    setIsEditing(true);
-                  }}
-                  className={`text-sm font-semibold leading-snug cursor-pointer select-text ${isCompleted
-                      ? 'line-through text-slate-400 dark:text-neutral-500'
-                      : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
-                    }`}
-                >
-                  {task.title}
-                </h4>
-              )}
+              <h4
+                onDoubleClick={startEditing}
+                className={`text-sm font-semibold leading-snug cursor-pointer select-text ${isCompleted
+                    ? 'line-through text-slate-400 dark:text-neutral-500'
+                    : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
+                  }`}
+              >
+                {task.title}
+              </h4>
             </div>
           </div>
 
           {/* Description */}
-          {task.description && !isEditing && (
+          {task.description && (
             <div className="mb-3 pl-8">
               <p
                 className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${
@@ -476,6 +626,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   // -------------------------------------------------------------
   // LIST STYLE VARIANT (Default)
   // -------------------------------------------------------------
+  if (isEditing) {
+    return (
+      <div className="relative rounded-xl border-2 border-indigo-500 bg-white dark:bg-neutral-900 p-4 shadow-lg overflow-hidden">
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl"
+          style={{ backgroundColor: project?.color || '#3b82f6' }}
+        />
+        <div className="pl-2">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              Edit Task
+            </span>
+          </div>
+          {EditForm}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${
@@ -541,70 +710,27 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           </div>
 
           {/* Title Row */}
-          {isEditing ? (
-            <form onSubmit={handleEditSubmit} className="space-y-2 mt-2">
-              <input
-                type="text"
-                value={editedTitle}
-                onChange={e => setEditedTitle(e.target.value)}
-                autoFocus
-                placeholder="Task title..."
-                className="w-full px-2.5 py-1 text-sm bg-white dark:bg-neutral-950 border border-indigo-500 rounded text-slate-900 dark:text-white focus:outline-none"
-              />
-              <textarea
-                value={editedDescription}
-                onChange={e => setEditedDescription(e.target.value)}
-                placeholder="Description / notes (Enter for new line)..."
-                rows={3}
-                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-950 border border-slate-300 dark:border-neutral-700 rounded text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 resize-y"
-              />
-              <div className="flex items-center justify-end gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditedTitle(task.title);
-                    setEditedDescription(task.description || '');
-                  }}
-                  className="px-2 py-0.5 text-xs text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-2.5 py-0.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded shadow-xs cursor-pointer"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span
-                onDoubleClick={() => {
-                  setEditedTitle(task.title);
-                  setEditedDescription(task.description || '');
-                  setIsEditing(true);
-                }}
-                className={`text-sm font-semibold leading-snug cursor-pointer select-text truncate ${isCompleted
-                    ? 'line-through text-slate-400 dark:text-neutral-500'
-                    : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
-                  }`}
-                title={task.title}
-              >
-                {task.title}
-              </span>
+          <div className="flex items-center gap-2">
+            <span
+              onDoubleClick={startEditing}
+              className={`text-sm font-semibold leading-snug cursor-pointer select-text truncate ${isCompleted
+                  ? 'line-through text-slate-400 dark:text-neutral-500'
+                  : 'text-slate-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors'
+                }`}
+              title={task.title}
+            >
+              {task.title}
+            </span>
 
-              {task.completionNote && (
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800/40 truncate max-w-xs">
-                  ✓ {task.completionNote}
-                </span>
-              )}
-            </div>
-          )}
+            {task.completionNote && (
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800/40 truncate max-w-xs">
+                ✓ {task.completionNote}
+              </span>
+            )}
+          </div>
 
           {/* Description or Notes if present */}
-          {task.description && !isEditing && (
+          {task.description && (
             <div className="mt-1">
               <p
                 className={`text-xs text-slate-600 dark:text-neutral-300 whitespace-pre-line leading-relaxed ${

@@ -139,7 +139,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
       > = {};
 
       filteredTasks.forEach(task => {
-        const dateKey = task.dueDate || (task.createdAt ? task.createdAt.split('T')[0] : todayStr);
+        const dateKey = task.dueDate || 'NO_DUE_DATE';
         if (!groups[dateKey]) {
           const meta = getDateGroupMeta(dateKey);
           groups[dateKey] = {
@@ -178,7 +178,10 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
     }
   };
 
-  const getSectionIcon = (badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming') => {
+  const getSectionIcon = (badgeType: 'today' | 'yesterday' | 'overdue' | 'upcoming', label?: string) => {
+    if (label && label.includes('No Due Date')) {
+      return <Inbox className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />;
+    }
     switch (badgeType) {
       case 'overdue':
         return <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />;
@@ -362,7 +365,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
               {/* Distinct Section Divider Header */}
               <div className="flex items-center justify-between gap-3 pt-2 pb-1.5 border-b border-slate-200 dark:border-neutral-800/80">
                 <div className="flex items-center gap-2">
-                  {getSectionIcon(group.badgeType)}
+                  {getSectionIcon(group.badgeType, group.label)}
                   <h3 className="text-xs font-bold text-slate-800 dark:text-neutral-200">
                     {group.label}
                   </h3>
