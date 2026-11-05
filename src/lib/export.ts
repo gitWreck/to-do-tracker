@@ -21,7 +21,12 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
     const projectName = projectMap.get(task.projectId) || 'General';
     const statusText = task.status === 'COMPLETED' ? 'DONE' : task.status;
 
-    const taskTitleWithNote = task.completionNote ? `${task.title} [Note: ${task.completionNote}]` : task.title;
+    const extraInfo = [
+      task.completionNote ? `Note: ${task.completionNote}` : '',
+      task.description ? task.description.replace(/\n+/g, ' • ') : '',
+    ].filter(Boolean).join(' | ');
+
+    const taskTitleWithNote = extraInfo ? `${task.title} [${extraInfo}]` : task.title;
 
     if (task.timeEntries && task.timeEntries.length > 0) {
       task.timeEntries.forEach(entry => {

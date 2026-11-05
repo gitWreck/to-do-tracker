@@ -15,6 +15,7 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
   const { shouldRender, isEntered } = useModalAnimation(isOpen, { onClose });
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState(projects[0]?.id || '');
   const [category, setCategory] = useState<TaskCategory>('PROGRAMMING');
   const [location, setLocation] = useState<WorkLocation>('OFFICE');
@@ -54,6 +55,7 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
 
     addRetroactiveEntry({
       title: title.trim(),
+      description: description.trim() || undefined,
       projectId: projectId || projects[0]?.id || 'proj-general',
       category,
       location,
@@ -67,6 +69,7 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
 
     onClose();
     setTitle('');
+    setDescription('');
   };
 
   return (
@@ -105,19 +108,44 @@ export const RetroactiveModal: React.FC<RetroactiveModalProps> = ({ isOpen, onCl
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Title */}
+          {/* Task Title */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-              Task Description <span className="text-red-500 dark:text-red-400">*</span>
+              Task Title <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
               required
               autoFocus
-              placeholder="e.g. Manuscript Workshop Follow-up Email"
+              placeholder="e.g. Manuscript Workshop Follow-up Email #CSAR"
               value={title}
               onChange={e => setTitle(e.target.value)}
               className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Description / Notes */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400">
+                Description / Notes
+              </label>
+              <span className="text-[10px] text-slate-400 dark:text-neutral-500">
+                Enter for new line &bull; Ctrl+Enter to save
+              </span>
+            </div>
+            <textarea
+              rows={3}
+              placeholder="Add details, deliverables, links, or notes...&#10;• Step 1&#10;• Step 2"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              onKeyDown={e => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-y min-h-[72px]"
             />
           </div>
 

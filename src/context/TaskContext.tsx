@@ -64,6 +64,7 @@ interface TaskContextType {
   deleteTask: (taskId: string) => void;
   addRetroactiveEntry: (data: {
     title: string;
+    description?: string;
     projectId: string;
     category: Task['category'];
     location: Task['location'];
@@ -704,6 +705,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addRetroactiveEntry = (data: {
     title: string;
+    description?: string;
     projectId: string;
     category: Task['category'];
     location: Task['location'];
@@ -738,14 +740,27 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const lastDayStr = isRange ? data.endDate! : data.date;
     const finalEndIso = new Date(`${lastDayStr}T${data.endTime}:00`).toISOString();
 
+    // Extract hashtags from title and description
+    const parsedTags: string[] = [];
+    const hashRegex = /#([a-zA-Z0-9_-]+)/g;
+    let match;
+    const combinedText = `${data.title} ${data.description || ''}`;
+    while ((match = hashRegex.exec(combinedText)) !== null) {
+      const tag = match[1];
+      if (!parsedTags.includes(tag)) {
+        parsedTags.push(tag);
+      }
+    }
+
     const newTask: Task = {
       id: taskId,
       title: data.title.trim(),
+      description: data.description?.trim() || undefined,
       category: data.category,
       location: data.location,
       priority: data.priority,
       projectId: data.projectId,
-      tags: [],
+      tags: parsedTags,
       status: data.markCompleted ? 'COMPLETED' : 'PENDING',
       createdAt: firstIso,
       completedAt: data.markCompleted ? finalEndIso : undefined,
