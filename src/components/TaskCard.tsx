@@ -6,6 +6,7 @@ import {
   formatDurationCompact,
   getTaskDateSpan,
   getTodayDateString,
+  formatCreatedDate,
 } from '@/lib/time';
 import {
   Play,
@@ -19,6 +20,7 @@ import {
   Hash,
   Clock,
   Calendar,
+  CalendarPlus,
   Star,
   Archive,
   RotateCcw,
@@ -128,6 +130,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
       />
       <span>{dateSpan.display}</span>
     </span>
+  );
+
+  const createdInfo = formatCreatedDate(task.createdAt);
+
+  const CreatedBadge = createdInfo.display ? (
+    <span
+      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-neutral-500 transition-colors"
+      title={createdInfo.tooltip}
+    >
+      <CalendarPlus className="w-3 h-3 flex-shrink-0 text-slate-400 dark:text-neutral-500" />
+      <span>{createdInfo.display}</span>
+    </span>
+  ) : null;
+
+  const DateMetadataRow = (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+      {CreatedBadge}
+      {CreatedBadge && <span className="text-slate-300 dark:text-neutral-700 select-none text-[10px]">•</span>}
+      {DateBadge}
+    </div>
   );
 
   const EditForm = (
@@ -823,9 +845,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           </div>
         </div>
 
-        {/* Card Footer: Date on left, Timer on right */}
+        {/* Card Footer: Created & Due/Completion Dates on left, Timer on right */}
         <div className="pt-3 border-t border-slate-100 dark:border-neutral-800/80 flex items-center justify-between gap-2 mt-auto pl-1">
-          {DateBadge}
+          {DateMetadataRow}
           {TimerControl}
         </div>
       </div>
@@ -905,11 +927,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
 
             {getLocationBadge(task.location)}
             {getPriorityBadge(task.priority)}
-
-            {/* Created or completed date indicator */}
-            <div className="ml-auto hidden sm:flex items-center">
-              {DateBadge}
-            </div>
           </div>
 
           {/* Title Row */}
@@ -967,6 +984,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
               ))}
             </div>
           )}
+
+          {/* Bottom metadata: Created Date & Due/Completion Date */}
+          <div className="mt-2">
+            {DateMetadataRow}
+          </div>
         </div>
 
         {/* Right-side Stopwatch, Duration Capsule & Quick Actions */}

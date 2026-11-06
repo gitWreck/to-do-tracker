@@ -239,6 +239,33 @@ export function getTaskDateSpan(task: {
   };
 }
 
+export function formatCreatedDate(isoStr?: string): { display: string; tooltip: string } {
+  if (!isoStr) return { display: '', tooltip: '' };
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return { display: '', tooltip: '' };
+    const now = new Date();
+    const isThisYear = d.getFullYear() === now.getFullYear();
+    const shortDate = d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      ...(isThisYear ? {} : { year: 'numeric' }),
+    });
+    const fullDate = d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return {
+      display: `Created ${shortDate}`,
+      tooltip: `Created on ${fullDate} at ${timeStr}`,
+    };
+  } catch {
+    return { display: '', tooltip: '' };
+  }
+}
+
 export function calculateSecondsBetween(startIso: string, endIso: string): number {
   const start = new Date(startIso).getTime();
   const end = new Date(endIso).getTime();
