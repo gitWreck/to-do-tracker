@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
-      const saved = (localStorage.getItem(THEME_KEY) || localStorage.getItem('ticktick_clone_theme_v1')) as Theme;
+      const saved = localStorage.getItem(THEME_KEY) as Theme;
       if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
       return 'dark'; // default to dark
     } catch {

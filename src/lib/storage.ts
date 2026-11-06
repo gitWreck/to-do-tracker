@@ -94,7 +94,7 @@ export const INITIAL_TASKS: Task[] = [
 
 export function loadProjects(): Project[] {
   try {
-    const raw = localStorage.getItem(PROJECTS_STORAGE_KEY) || localStorage.getItem('ticktick_clone_projects_v1');
+    const raw = localStorage.getItem(PROJECTS_STORAGE_KEY);
     if (!raw) {
       saveProjects(INITIAL_PROJECTS);
       return INITIAL_PROJECTS;
@@ -116,7 +116,7 @@ export function saveProjects(projects: Project[]): void {
 
 export function loadTasks(): Task[] {
   try {
-    const raw = localStorage.getItem(TASKS_STORAGE_KEY) || localStorage.getItem('ticktick_clone_tasks_v1');
+    const raw = localStorage.getItem(TASKS_STORAGE_KEY);
     if (!raw) {
       saveTasks(INITIAL_TASKS);
       return INITIAL_TASKS;
@@ -151,7 +151,7 @@ export function saveTasks(tasks: Task[]): void {
 
 export function loadActiveTimer(): ActiveTimerState | null {
   try {
-    const raw = localStorage.getItem(TIMER_STORAGE_KEY) || localStorage.getItem('ticktick_clone_active_timer_v1');
+    const raw = localStorage.getItem(TIMER_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {

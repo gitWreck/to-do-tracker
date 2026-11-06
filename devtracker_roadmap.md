@@ -1,4 +1,4 @@
-# TickTick Clone: Full Engineering Roadmap & Checklist
+# DevTracker: Full Engineering Roadmap & Checklist
 
 A comprehensive specification and step-by-step checklist to build a lightweight, developer-focused work and task tracker featuring real-time stopwatches, persistent pending tasks, floating overlay widgets, and spreadsheet exports.
 

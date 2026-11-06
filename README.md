@@ -2,7 +2,7 @@
 
 A lightweight, developer-focused work and task tracker featuring real-time stopwatches, persistent day-to-day rollover with date dividers, "The Big 3" daily focus pinning, interactive calendar scheduling, floating overlay mini-widgets, and government accomplishment spreadsheet (CSV) exports.
 
-Based on the engineering specifications in [`ticktick_clone_roadmap.md`](./ticktick_clone_roadmap.md).
+Based on the engineering specifications in [`devtracker_roadmap.md`](./devtracker_roadmap.md).
 
 ---
 

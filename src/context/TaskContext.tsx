@@ -179,7 +179,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     selectedTag: 'ALL',
     statusTab: 'PENDING',
     layoutStyle: (typeof localStorage !== 'undefined' && 
-      ((localStorage.getItem('devtracker_view_layout') || localStorage.getItem('ticktick_view_layout')) as 'LIST' | 'GRID')) || 'LIST',
+      (localStorage.getItem('devtracker_view_layout') as 'LIST' | 'GRID')) || 'LIST',
   });
 
   // On cloud authentication, load data from Supabase (or migrate local to cloud on first setup)
