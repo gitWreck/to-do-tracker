@@ -1,6 +1,6 @@
 # DevTracker: Developer Work & Time Tracker
 
-A lightweight, developer-focused work and task tracker featuring real-time stopwatches, persistent day-to-day rollover with date dividers, interactive calendar scheduling, floating overlay mini-widgets, and government accomplishment spreadsheet (CSV) exports.
+A lightweight, developer-focused work and task tracker featuring real-time stopwatches, persistent day-to-day rollover with date dividers, "The Big 3" daily focus pinning, interactive calendar scheduling, floating overlay mini-widgets, and government accomplishment spreadsheet (CSV) exports.
 
 Based on the engineering specifications in [`ticktick_clone_roadmap.md`](./ticktick_clone_roadmap.md).
 
@@ -14,6 +14,8 @@ Based on the engineering specifications in [`ticktick_clone_roadmap.md`](./tickt
   * **Yesterday (Carried Over)**: Tasks from the previous workday.
   * **Today**: Items due or created today.
   * **Upcoming**: Tasks scheduled for future dates.
+  * **No Due Date (Backlog)**: Tasks without an explicit deadline are neatly grouped in a dedicated backlog section while preserving their original `createdAt` timestamp across calendar and history views.
+- **"The Big 3" Priority Task Pinning:** Star / pin up to 3 high-focus daily tasks to the top of your board. Persists in both local storage and cloud Supabase (`is_pinned`), automatically unpinning when completed, archived, or deleted.
 - **Commit Completion Prompt:** When marking done, a dialog opens to review tracked time, apply quick increments (`+5m`, `+15m`, `Round to 15m`), add accomplishment deliverable notes, and commit with celebration confetti.
 - **Undo Toast:** Instant non-blocking notification with **[Undo]** button for task completions, re-openings, and deletions.
 - **Local Persistence & Backup:** Tasks, projects, and active timer state persist locally in browser storage with backwards-compatible migration and one-click **Export Backup JSON**.
@@ -40,10 +42,14 @@ Based on the engineering specifications in [`ticktick_clone_roadmap.md`](./tickt
 - **Functional Categories:** Filter by `Programming`, `Admin Task`, `Meetings`, and `Other`.
 - **Hashtag Parsing:** Typing `#CSAR` or `#Backend` in task titles automatically extracts and indexes tags.
 
-### 7. Retroactive Time Logging ("Log Past Work")
+### 7. Sidebar Projects & Safe Reordering Mode
+- **Custom Projects:** Create projects with custom color tags, edit names/colors, and track task counts.
+- **Explicit Reorder Mode Toggle:** Toggle the Reorder (`⇅`) button in the Projects header to enable drag-and-drop or 1-click **▲ / ▼** move arrows. When locked (default), projects cannot be accidentally dragged while clicking.
+
+### 8. Retroactive Time Logging ("Log Past Work")
 - Modal to record past work intervals with date picker, start time (`HH:MM`), end time (`HH:MM`), auto-calculated duration in decimal hours, and direct `[DONE]` marking.
 
-### 8. Government Accomplishment Report & CSV Export
+### 9. Government Accomplishment Report & CSV Export
 - Generates official accomplishment reports matching the exact CSV schema:
   ```csv
   Date,Project,Category,Location,Task,Start Time,End Time,Duration (Hrs),Status
@@ -60,6 +66,7 @@ Based on the engineering specifications in [`ticktick_clone_roadmap.md`](./tickt
 | `Ctrl + N` / `Cmd + N` | Open New Task modal |
 | `Ctrl + L` / `Cmd + L` | Open Retroactive Work ("Log Past Work") modal |
 | `Ctrl + Shift + T` | Toggle Always-On-Top Mini Widget |
+| `Escape` | Close Mobile Drawer Menu |
 
 ---
 
@@ -78,8 +85,6 @@ npm run build
 
 ---
 
----
-
 ## Cloud Sync, Vercel & Supabase Setup (Google Sign-In)
 
 DevTracker supports **private single-user cloud sync** using **Supabase** and **Google Sign-In**, deployable to **Vercel** with one click.
@@ -88,6 +93,7 @@ DevTracker supports **private single-user cloud sync** using **Supabase** and **
 - **Single-User Email Whitelist:** The environment variable `VITE_ALLOWED_EMAIL` enforces that only your specific Google account can sign in. Any other Google account will be rejected and automatically signed out.
 - **PostgreSQL Row-Level Security (RLS):** All tables (`projects`, `tasks`, `time_entries`) have RLS policies strictly isolating records by `auth.uid() = user_id`.
 - **Offline / Local Mode Fallback:** If Supabase credentials are not configured, DevTracker functions completely offline using browser local storage without crashing.
+- **Hybrid Pinned Task Persistence:** Pinned tasks are synced with both the `is_pinned` column in Supabase and local storage, ensuring smooth backwards-compatibility and persistence across page reloads.
 
 ---
 
@@ -95,7 +101,8 @@ DevTracker supports **private single-user cloud sync** using **Supabase** and **
 
 1. Go to [supabase.com](https://supabase.com) and create a new project.
 2. Open the **SQL Editor** in your Supabase dashboard (left sidebar -> `SQL Editor` -> `New Query`).
-3. Copy the contents of [`supabase_schema.sql`](./supabase_schema.sql) in this repository, paste it into the editor, and click **Run**.
+3. Copy the contents of [`supabase_schema.sql`](./supabase_schema.sql) in this repository, paste it into the editor, and click **Run**.  
+   *(If your database already has the tasks table, run: `alter table public.tasks add column if not exists is_pinned boolean not null default false;`)*
 4. Go to **Project Settings** -> **API** and copy:
    - **Project URL** (`https://<project-id>.supabase.co`)
    - **Project API Anon Key** (`anon` `public`)
@@ -125,8 +132,8 @@ DevTracker supports **private single-user cloud sync** using **Supabase** and **
 1. Push this repository to GitHub or GitLab:
    ```bash
    git add .
-   git commit -m "feat: add supabase cloud sync with google sign in and vercel config"
-   git push origin master
+   git commit -m "feat: setup devtracker cloud sync"
+   git push origin main
    ```
 2. Go to [vercel.com](https://vercel.com) -> **Add New Project** -> Import your repository.
 3. Under **Environment Variables**, add the following 3 variables:
