@@ -121,7 +121,20 @@ export function loadTasks(): Task[] {
       saveTasks(INITIAL_TASKS);
       return INITIAL_TASKS;
     }
-    return JSON.parse(raw);
+    const tasks: Task[] = JSON.parse(raw);
+    const pinnedRaw = localStorage.getItem('devtracker_pinned_tasks_v1');
+    if (pinnedRaw) {
+      try {
+        const pinnedIds = new Set(JSON.parse(pinnedRaw));
+        return tasks.map(t => ({
+          ...t,
+          isPinned: pinnedIds.has(t.id) && t.status !== 'ARCHIVED' && t.status !== 'COMPLETED' ? true : !!t.isPinned,
+        }));
+      } catch {
+        // ignore
+      }
+    }
+    return tasks;
   } catch (err) {
     console.warn('Failed to load tasks from storage:', err);
     return INITIAL_TASKS;

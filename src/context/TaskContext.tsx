@@ -87,6 +87,71 @@ interface TaskContextType {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
+const PINNED_TASKS_STORAGE_KEY = 'devtracker_pinned_tasks_v1';
+
+function getStoredPinnedIds(): string[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(PINNED_TASKS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function syncStoredPinnedIds(ids: string[]): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(PINNED_TASKS_STORAGE_KEY, JSON.stringify(ids.slice(0, 3)));
+  } catch {
+    // ignore
+  }
+}
+
+function mergeTasksWithPinnedState(incomingTasks: Task[]): Task[] {
+  const storedIds = getStoredPinnedIds();
+  const storedSet = new Set(storedIds);
+
+  const pinnedIdsSet = new Set<string>();
+
+  incomingTasks.forEach(t => {
+    const isEligible = t.status !== 'ARCHIVED' && t.status !== 'COMPLETED';
+    if (isEligible) {
+      if (t.isPinned === true) {
+        pinnedIdsSet.add(t.id);
+      } else if (storedSet.has(t.id)) {
+        pinnedIdsSet.add(t.id);
+      }
+    }
+  });
+
+  const orderedPinned: string[] = [];
+  storedIds.forEach(id => {
+    if (pinnedIdsSet.has(id) && orderedPinned.length < 3) {
+      orderedPinned.push(id);
+      pinnedIdsSet.delete(id);
+    }
+  });
+  pinnedIdsSet.forEach(id => {
+    if (orderedPinned.length < 3) {
+      orderedPinned.push(id);
+    }
+  });
+
+  const finalPinnedSet = new Set(orderedPinned);
+  syncStoredPinnedIds(orderedPinned);
+
+  return incomingTasks.map(t => {
+    const shouldPin = finalPinnedSet.has(t.id);
+    if (t.isPinned !== shouldPin) {
+      return { ...t, isPinned: shouldPin };
+    }
+    return t;
+  });
+}
+
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthorized, isOfflineMode } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -144,7 +209,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // ignore
         }
         setProjects(loadedProjects);
-        setTasks(data.tasks);
+        setTasks(mergeTasksWithPinnedState(data.tasks));
       } else {
         // First-time sync: push local data to Supabase
         const currentProjects = loadProjects();
@@ -179,16 +244,25 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       onTaskUpsert: (incomingTask) => {
         setTasks(prev => {
           const index = prev.findIndex(t => t.id === incomingTask.id);
+          const isEligible = incomingTask.status !== 'ARCHIVED' && incomingTask.status !== 'COMPLETED';
+          const storedIds = getStoredPinnedIds();
+          const shouldPin = isEligible && (incomingTask.isPinned === true || (incomingTask.isPinned === undefined && storedIds.includes(incomingTask.id)));
+          const normalizedTask = { ...incomingTask, isPinned: shouldPin };
+
           if (index >= 0) {
             const next = [...prev];
-            next[index] = incomingTask;
+            next[index] = normalizedTask;
             return next;
           }
-          return [incomingTask, ...prev];
+          return [normalizedTask, ...prev];
         });
       },
       onTaskDelete: (deletedTaskId) => {
-        setTasks(prev => prev.filter(t => t.id !== deletedTaskId));
+        setTasks(prev => {
+          const next = prev.filter(t => t.id !== deletedTaskId);
+          syncStoredPinnedIds(next.filter(t => t.isPinned && t.status !== 'ARCHIVED' && t.status !== 'COMPLETED').map(t => t.id));
+          return next;
+        });
         setActiveTimer(prev => (prev?.taskId === deletedTaskId ? null : prev));
       },
       onProjectUpsert: (incomingProj) => {
@@ -212,7 +286,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchUserDataFromCloud(user.id).then(data => {
           if (data) {
             if (data.projects.length > 0) setProjects(data.projects);
-            if (data.tasks.length > 0) setTasks(data.tasks);
+            if (data.tasks.length > 0) setTasks(mergeTasksWithPinnedState(data.tasks));
           }
         });
       },
@@ -241,7 +315,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cloudData = await fetchUserDataFromCloud(user.id);
       if (cloudData) {
         if (cloudData.projects.length > 0) setProjects(cloudData.projects);
-        if (cloudData.tasks.length > 0) setTasks(cloudData.tasks);
+        if (cloudData.tasks.length > 0) setTasks(mergeTasksWithPinnedState(cloudData.tasks));
       }
     } finally {
       setIsSyncing(false);
@@ -311,7 +385,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const cloudData = await fetchUserDataFromCloud(user.id);
         if (cloudData) {
           if (cloudData.projects.length > 0) setProjects(cloudData.projects);
-          if (cloudData.tasks.length > 0) setTasks(cloudData.tasks);
+          if (cloudData.tasks.length > 0) setTasks(mergeTasksWithPinnedState(cloudData.tasks));
         }
       }
       setToast({
@@ -552,20 +626,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completedTask: Task = {
       ...task,
       status: 'COMPLETED',
+      isPinned: false,
       completedAt: nowIso,
       completionNote: options?.note || task.completionNote,
       timeEntries: updatedEntries,
       totalDurationSeconds: newTotalSeconds,
     };
 
-    setTasks(prev =>
-      prev.map(t => {
-        if (t.id === taskId) {
-          return completedTask;
-        }
-        return t;
-      })
-    );
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === taskId ? completedTask : t));
+      syncStoredPinnedIds(next.filter(t => t.isPinned && t.status !== 'ARCHIVED' && t.status !== 'COMPLETED').map(t => t.id));
+      return next;
+    });
 
     if (user && isAuthorized && !isOfflineMode) {
       syncTaskToCloud(user.id, completedTask);
@@ -671,8 +743,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       stopTimer();
     }
 
-    const archivedTask: Task = { ...task, status: 'ARCHIVED' };
-    setTasks(prev => prev.map(t => (t.id === taskId ? archivedTask : t)));
+    const archivedTask: Task = { ...task, status: 'ARCHIVED', isPinned: false };
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === taskId ? archivedTask : t));
+      syncStoredPinnedIds(next.filter(t => t.isPinned && t.status !== 'ARCHIVED' && t.status !== 'COMPLETED').map(t => t.id));
+      return next;
+    });
 
     if (user && isAuthorized && !isOfflineMode) {
       syncTaskToCloud(user.id, archivedTask);

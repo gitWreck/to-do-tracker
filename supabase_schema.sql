@@ -29,8 +29,12 @@ create table if not exists public.tasks (
   created_at timestamptz default now(),
   completed_at timestamptz,
   completion_note text,
-  total_duration_seconds integer not null default 0
+  total_duration_seconds integer not null default 0,
+  is_pinned boolean not null default false
 );
+
+-- In case public.tasks table already exists, add is_pinned column:
+alter table public.tasks add column if not exists is_pinned boolean not null default false;
 
 -- 3. Create Time Entries Table
 create table if not exists public.time_entries (

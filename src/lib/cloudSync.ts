@@ -95,6 +95,31 @@ export function enqueueMutation(
 }
 
 let isFlushingQueue = false;
+let hasPinnedColumnSupport = true;
+
+function buildTaskUpsertData(userId: string, task: Task, withPinned: boolean) {
+  const payload: Record<string, any> = {
+    id: task.id,
+    user_id: userId,
+    project_id: task.projectId || null,
+    title: task.title,
+    description: task.description || null,
+    category: task.category,
+    location: task.location,
+    priority: task.priority,
+    status: task.status,
+    tags: task.tags || [],
+    due_date: task.dueDate || null,
+    created_at: task.createdAt,
+    completed_at: task.completedAt || null,
+    completion_note: task.completionNote || null,
+    total_duration_seconds: task.totalDurationSeconds || 0,
+  };
+  if (withPinned) {
+    payload.is_pinned = !!task.isPinned;
+  }
+  return payload;
+}
 
 export async function flushOfflineQueue(): Promise<{ flushed: number; remaining: number }> {
   if (isFlushingQueue) {
@@ -116,23 +141,15 @@ export async function flushOfflineQueue(): Promise<{ flushed: number; remaining:
       try {
         if (item.type === 'UPSERT_TASK') {
           const task: Task = item.payload;
-          const { error } = await supabase.from('tasks').upsert({
-            id: task.id,
-            user_id: item.userId,
-            project_id: task.projectId || null,
-            title: task.title,
-            description: task.description || null,
-            category: task.category,
-            location: task.location,
-            priority: task.priority,
-            status: task.status,
-            tags: task.tags || [],
-            due_date: task.dueDate || null,
-            created_at: task.createdAt,
-            completed_at: task.completedAt || null,
-            completion_note: task.completionNote || null,
-            total_duration_seconds: task.totalDurationSeconds || 0,
-          });
+          let upsertPayload = buildTaskUpsertData(item.userId, task, hasPinnedColumnSupport);
+          let { error } = await supabase.from('tasks').upsert(upsertPayload);
+
+          if (error && hasPinnedColumnSupport && (error.message?.includes('is_pinned') || error.code === 'PGRST204')) {
+            hasPinnedColumnSupport = false;
+            upsertPayload = buildTaskUpsertData(item.userId, task, false);
+            const retryRes = await supabase.from('tasks').upsert(upsertPayload);
+            error = retryRes.error;
+          }
           if (error) throw error;
 
           if (task.timeEntries && task.timeEntries.length > 0) {
@@ -271,6 +288,7 @@ export async function fetchUserDataFromCloud(userId: string): Promise<CloudData 
       completedAt: r.completed_at || undefined,
       completionNote: r.completion_note || undefined,
       totalDurationSeconds: r.total_duration_seconds || 0,
+      isPinned: typeof r.is_pinned === 'boolean' ? r.is_pinned : undefined,
       timeEntries: entriesByTaskId.get(r.id) || [],
     }));
 
@@ -295,23 +313,15 @@ export async function syncTaskToCloud(userId: string, task: Task): Promise<void>
   if (!supabase) return;
 
   try {
-    const { error: taskError } = await supabase.from('tasks').upsert({
-      id: task.id,
-      user_id: userId,
-      project_id: task.projectId || null,
-      title: task.title,
-      description: task.description || null,
-      category: task.category,
-      location: task.location,
-      priority: task.priority,
-      status: task.status,
-      tags: task.tags || [],
-      due_date: task.dueDate || null,
-      created_at: task.createdAt,
-      completed_at: task.completedAt || null,
-      completion_note: task.completionNote || null,
-      total_duration_seconds: task.totalDurationSeconds || 0,
-    });
+    let upsertPayload = buildTaskUpsertData(userId, task, hasPinnedColumnSupport);
+    let { error: taskError } = await supabase.from('tasks').upsert(upsertPayload);
+
+    if (taskError && hasPinnedColumnSupport && (taskError.message?.includes('is_pinned') || taskError.code === 'PGRST204')) {
+      hasPinnedColumnSupport = false;
+      upsertPayload = buildTaskUpsertData(userId, task, false);
+      const retryRes = await supabase.from('tasks').upsert(upsertPayload);
+      taskError = retryRes.error;
+    }
 
     if (taskError) {
       console.warn('Network error syncing task to Supabase, queuing mutation:', taskError);
@@ -413,24 +423,15 @@ export async function migrateLocalDataToCloud(
     }
 
     if (tasks.length > 0) {
-      const taskPayload = tasks.map(t => ({
-        id: t.id,
-        user_id: userId,
-        project_id: t.projectId || null,
-        title: t.title,
-        description: t.description || null,
-        category: t.category,
-        location: t.location,
-        priority: t.priority,
-        status: t.status,
-        tags: t.tags || [],
-        due_date: t.dueDate || null,
-        created_at: t.createdAt,
-        completed_at: t.completedAt || null,
-        completion_note: t.completionNote || null,
-        total_duration_seconds: t.totalDurationSeconds || 0,
-      }));
-      const { error: tErr } = await supabase.from('tasks').upsert(taskPayload);
+      let taskPayload = tasks.map(t => buildTaskUpsertData(userId, t, hasPinnedColumnSupport));
+      let { error: tErr } = await supabase.from('tasks').upsert(taskPayload);
+
+      if (tErr && hasPinnedColumnSupport && (tErr.message?.includes('is_pinned') || tErr.code === 'PGRST204')) {
+        hasPinnedColumnSupport = false;
+        taskPayload = tasks.map(t => buildTaskUpsertData(userId, t, false));
+        const retryRes = await supabase.from('tasks').upsert(taskPayload);
+        tErr = retryRes.error;
+      }
       if (tErr) throw tErr;
 
       const allEntries = tasks.flatMap(t =>
