@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Task, Project, TaskCategory, WorkLocation, TaskPriority } from '@/types';
+import React, { useState } from 'react';
+import { Task, Project } from '@/types';
 import { useTasks } from '@/context/TaskContext';
+import { EditTaskModal } from './EditTaskModal';
 import {
   formatDuration,
   formatDurationCompact,
   getTaskDateSpan,
-  getTodayDateString,
   formatCreatedDate,
 } from '@/lib/time';
 import {
@@ -24,8 +24,6 @@ import {
   Star,
   Archive,
   RotateCcw,
-  X,
-  ChevronDown,
 } from 'lucide-react';
 
 interface TaskCardProps {
@@ -36,7 +34,6 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'list' }) => {
   const {
-    projects,
     activeTimer,
     startTimer,
     stopTimer,
@@ -48,14 +45,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   } = useTasks();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(task.title);
-  const [editedDescription, setEditedDescription] = useState(task.description || '');
-  const [editedProjectId, setEditedProjectId] = useState(task.projectId);
-  const [editedCategory, setEditedCategory] = useState<TaskCategory>(task.category);
-  const [editedLocation, setEditedLocation] = useState<WorkLocation>(task.location);
-  const [editedPriority, setEditedPriority] = useState<TaskPriority>(task.priority);
-  const [editedDueDate, setEditedDueDate] = useState<string>(task.dueDate || '');
-  const [editedTagsInput, setEditedTagsInput] = useState<string>(task.tags ? task.tags.join(', ') : '');
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   const isCurrentTaskRunning = activeTimer?.taskId === task.id;
@@ -64,51 +53,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   const isPinned = !!task.isPinned && !isCompleted && !isArchived;
   const dateSpan = getTaskDateSpan(task);
 
-  const selectedProject = projects.find(p => p.id === editedProjectId) || project;
-
-  useEffect(() => {
-    if (!isEditing) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsEditing(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditing]);
-
   const startEditing = () => {
-    setEditedTitle(task.title);
-    setEditedDescription(task.description || '');
-    setEditedProjectId(task.projectId);
-    setEditedCategory(task.category);
-    setEditedLocation(task.location);
-    setEditedPriority(task.priority);
-    setEditedDueDate(task.dueDate || '');
-    setEditedTagsInput(task.tags && task.tags.length > 0 ? task.tags.join(', ') : '');
     setIsEditing(true);
-  };
-
-  const handleEditSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!editedTitle.trim()) return;
-
-    const extraTags = editedTagsInput
-      .split(',')
-      .map(t => t.trim().replace(/^#/, ''))
-      .filter(Boolean);
-
-    updateTask(task.id, {
-      title: editedTitle.trim(),
-      description: editedDescription.trim() || undefined,
-      projectId: editedProjectId,
-      category: editedCategory,
-      location: editedLocation,
-      priority: editedPriority,
-      dueDate: editedDueDate.trim() ? editedDueDate.trim() : undefined,
-      tags: extraTags,
-    });
-    setIsEditing(false);
   };
 
   // Total duration including live active timer elapsed seconds if this task is active
@@ -150,353 +96,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
       {CreatedBadge && <span className="text-slate-300 dark:text-neutral-700 select-none text-[10px]">•</span>}
       {DateBadge}
     </div>
-  );
-
-  const EditForm = (
-    <form onSubmit={handleEditSubmit} className="space-y-3.5">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-neutral-800">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
-            <Pencil className="w-3.5 h-3.5" />
-          </div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-neutral-200">
-              Edit Task
-            </h3>
-            {selectedProject && (
-              <span
-                className="px-2 py-0.5 text-[10px] font-semibold rounded-md text-white shadow-2xs"
-                style={{ backgroundColor: selectedProject.color }}
-              >
-                {selectedProject.name}
-              </span>
-            )}
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsEditing(false)}
-          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition cursor-pointer"
-          title="Cancel (Esc)"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Title */}
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-          Task Title <span className="text-red-500 dark:text-red-400">*</span>
-        </label>
-        <input
-          type="text"
-          required
-          autoFocus
-          value={editedTitle}
-          onChange={e => setEditedTitle(e.target.value)}
-          onKeyDown={e => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-              e.preventDefault();
-              handleEditSubmit();
-            }
-          }}
-          placeholder="Task title..."
-          className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors shadow-2xs"
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400">
-            Description / Notes
-          </label>
-          <span className="text-[10px] text-slate-400 dark:text-neutral-500">
-            Enter for new line &bull; Ctrl+Enter to save
-          </span>
-        </div>
-        <textarea
-          rows={3}
-          value={editedDescription}
-          onChange={e => setEditedDescription(e.target.value)}
-          onKeyDown={e => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-              e.preventDefault();
-              handleEditSubmit();
-            }
-          }}
-          placeholder="Add details, notes, links or deliverables..."
-          className="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-y min-h-[64px]"
-        />
-      </div>
-
-      {/* Project & Category Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400">
-              Project
-            </label>
-            {selectedProject && (
-              <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-neutral-300">
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: selectedProject.color }}
-                />
-                <span className="truncate max-w-[130px]">{selectedProject.name}</span>
-              </span>
-            )}
-          </div>
-          <div className="relative">
-            <select
-              value={editedProjectId}
-              onChange={e => setEditedProjectId(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none pr-8 cursor-pointer"
-            >
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 dark:text-neutral-500">
-              <ChevronDown className="w-3.5 h-3.5" />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-            Category
-          </label>
-          <div className="relative">
-            <select
-              value={editedCategory}
-              onChange={e => setEditedCategory(e.target.value as TaskCategory)}
-              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none pr-8 cursor-pointer"
-            >
-              <option value="PROGRAMMING">Programming</option>
-              <option value="ADMIN">Admin Task</option>
-              <option value="MEETING">Meeting</option>
-              <option value="OTHER">Other</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 dark:text-neutral-500">
-              <ChevronDown className="w-3.5 h-3.5" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Work Location */}
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-          Work Location
-        </label>
-        <div className="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-neutral-950 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-800">
-          <button
-            type="button"
-            onClick={() => setEditedLocation('OFFICE')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${editedLocation === 'OFFICE'
-              ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Office</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditedLocation('HOME')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${editedLocation === 'HOME'
-              ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <Home className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Home</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditedLocation('FIELD')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg font-medium transition cursor-pointer ${editedLocation === 'FIELD'
-              ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <Compass className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Field</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Priority Level */}
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-          Priority Level
-        </label>
-        <div className="grid grid-cols-4 gap-1.5 bg-slate-100 dark:bg-neutral-950 p-1.5 rounded-xl border border-slate-200 dark:border-neutral-800">
-          <button
-            type="button"
-            onClick={() => setEditedPriority('LOW')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'LOW'
-              ? 'bg-emerald-600 text-white dark:bg-emerald-600/30 dark:text-emerald-300 dark:border dark:border-emerald-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'LOW' ? 'bg-white dark:bg-emerald-300' : 'bg-emerald-500'}`} />
-            <span>Low</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditedPriority('MEDIUM')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'MEDIUM'
-              ? 'bg-blue-600 text-white dark:bg-blue-600/30 dark:text-blue-300 dark:border dark:border-blue-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'MEDIUM' ? 'bg-white dark:bg-blue-300' : 'bg-blue-500'}`} />
-            <span>Medium</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditedPriority('HIGH')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'HIGH'
-              ? 'bg-amber-600 text-white dark:bg-amber-600/30 dark:text-amber-300 dark:border dark:border-amber-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'HIGH' ? 'bg-white dark:bg-amber-300' : 'bg-amber-500'}`} />
-            <span>High</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditedPriority('URGENT')}
-            className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs rounded-lg font-medium transition cursor-pointer ${editedPriority === 'URGENT'
-              ? 'bg-rose-600 text-white dark:bg-rose-600/30 dark:text-rose-300 dark:border dark:border-rose-500/50 shadow-2xs font-semibold'
-              : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-900/60'
-              }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${editedPriority === 'URGENT' ? 'bg-white dark:bg-rose-300 animate-pulse' : 'bg-rose-500'}`} />
-            <span>Urgent</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Due Date & Quick Presets */}
-      <div className="p-3 bg-slate-50 dark:bg-neutral-950/60 rounded-xl border border-slate-200 dark:border-neutral-800 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400">
-            <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            Due Date
-          </label>
-          <div className="flex flex-wrap items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setEditedDueDate('')}
-              className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition cursor-pointer ${!editedDueDate
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
-                }`}
-            >
-              No Due Date
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditedDueDate(getTodayDateString())}
-              className={`px-2 py-0.5 text-[10px] font-medium rounded-lg border transition cursor-pointer ${editedDueDate === getTodayDateString()
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                : 'bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400'
-                }`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const d = new Date();
-                d.setDate(d.getDate() + 3);
-                const y = d.getFullYear();
-                const m = (d.getMonth() + 1).toString().padStart(2, '0');
-                const day = d.getDate().toString().padStart(2, '0');
-                setEditedDueDate(`${y}-${m}-${day}`);
-              }}
-              className="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400 transition cursor-pointer"
-            >
-              +3 Days
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const d = new Date();
-                d.setDate(d.getDate() + 7);
-                const y = d.getFullYear();
-                const m = (d.getMonth() + 1).toString().padStart(2, '0');
-                const day = d.getDate().toString().padStart(2, '0');
-                setEditedDueDate(`${y}-${m}-${day}`);
-              }}
-              className="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 hover:border-indigo-400 transition cursor-pointer"
-            >
-              +1 Week
-            </button>
-          </div>
-        </div>
-        <input
-          type="date"
-          value={editedDueDate}
-          onChange={e => setEditedDueDate(e.target.value)}
-          className="w-full px-3 py-1.5 text-xs bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-        />
-      </div>
-
-      {/* Tags */}
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-neutral-400 mb-1.5">
-          Tags <span className="font-normal text-slate-400 dark:text-neutral-500">(comma separated)</span>
-        </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-neutral-500">
-            <Hash className="w-3.5 h-3.5" />
-          </div>
-          <input
-            type="text"
-            placeholder="frontend, urgent, bug"
-            value={editedTagsInput}
-            onChange={e => setEditedTagsInput(e.target.value)}
-            onKeyDown={e => {
-              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                handleEditSubmit();
-              }
-            }}
-            className="w-full pl-8 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Form Action Buttons */}
-      <div className="flex items-center justify-between pt-3.5 border-t border-slate-200 dark:border-neutral-800">
-        {/* <div className="text-[11px] text-slate-400 dark:text-neutral-500 hidden sm:block">
-          <kbd className="font-mono bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-[10px] border border-slate-200 dark:border-neutral-700">Esc</kbd> cancel &bull; <kbd className="font-mono bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-[10px] border border-slate-200 dark:border-neutral-700">Ctrl+Enter</kbd> save
-        </div> */}
-        <div className="flex items-center gap-2.5 ml-auto">
-          <button
-            type="button"
-            onClick={() => setIsEditing(false)}
-            className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-xl transition cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Save</span>
-          </button>
-        </div>
-      </div>
-    </form>
   );
 
   const cyclePriority = (e: React.MouseEvent) => {
@@ -723,23 +322,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
   // GRID / CARD STYLE VARIANT
   // -------------------------------------------------------------
   if (variant === 'grid') {
-    if (isEditing) {
-      return (
-        <div className="relative rounded-2xl border border-indigo-400/80 dark:border-indigo-600/80 ring-2 ring-indigo-500/20 bg-white dark:bg-neutral-900 p-4 shadow-lg shadow-indigo-500/5 overflow-hidden transition-all">
-          <div
-            className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-            style={{ backgroundColor: selectedProject?.color || '#3b82f6' }}
-          />
-          <div className="pl-1">
-            {EditForm}
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div
-        className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${isCurrentTaskRunning
+      <>
+        <div
+          className={`group relative rounded-2xl border flex flex-col justify-between transition-all duration-150 p-4 overflow-hidden ${isCurrentTaskRunning
           ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
           : isArchived
             ? 'bg-slate-50/60 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
@@ -851,29 +437,24 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
           {TimerControl}
         </div>
       </div>
+      {isEditing && (
+        <EditTaskModal
+          isOpen={isEditing}
+          onClose={() => setIsEditing(false)}
+          task={task}
+        />
+      )}
+    </>
     );
   }
 
   // -------------------------------------------------------------
   // LIST STYLE VARIANT (Default)
   // -------------------------------------------------------------
-  if (isEditing) {
-    return (
-      <div className="relative rounded-xl border border-indigo-400/80 dark:border-indigo-600/80 ring-2 ring-indigo-500/20 bg-white dark:bg-neutral-900 p-4 sm:p-5 shadow-lg shadow-indigo-500/5 overflow-hidden transition-all">
-        <div
-          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
-          style={{ backgroundColor: selectedProject?.color || '#3b82f6' }}
-        />
-        <div className="pl-1">
-          {EditForm}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${isCurrentTaskRunning
+    <>
+      <div
+        className={`group relative rounded-xl border transition-all duration-150 overflow-hidden ${isCurrentTaskRunning
         ? 'bg-emerald-50/70 dark:bg-neutral-900/95 border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
         : isArchived
           ? 'bg-slate-50/60 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800/60 opacity-80'
@@ -998,5 +579,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, project, variant = 'li
         </div>
       </div>
     </div>
-  );
+    {isEditing && (
+      <EditTaskModal
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        task={task}
+      />
+    )}
+  </>
+);
 };
