@@ -1,7 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { Task } from '@/types';
-import { formatDurationCompact, formatDecimalHours, getTodayDateString, getTaskDateSpan } from '@/lib/time';
+import {
+  formatDurationCompact,
+  formatDecimalHours,
+  getTodayDateString,
+  getLocalDateString,
+  formatDateOnly,
+  getTaskDateSpan,
+} from '@/lib/time';
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,9 +29,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
   const { tasks, projects, activeTimer, startTimer, stopTimer, toggleTaskComplete } = useTasks();
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
-  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
-  });
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => getTodayDateString());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-indexed
@@ -45,7 +50,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
   const handleJumpToday = () => {
     const today = new Date();
     setCurrentDate(today);
-    setSelectedDateStr(today.toISOString().split('T')[0]);
+    setSelectedDateStr(getLocalDateString(today));
   };
 
   const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
@@ -98,10 +103,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
 
     tasks.forEach(task => {
       // 1. Task created date & due date
-      const createdDate = task.createdAt.split('T')[0];
-      const entryCreated = getOrCreate(createdDate);
-      if (!entryCreated.tasks.some(t => t.id === task.id)) {
-        entryCreated.tasks.push(task);
+      const createdDate = formatDateOnly(task.createdAt);
+      if (createdDate) {
+        const entryCreated = getOrCreate(createdDate);
+        if (!entryCreated.tasks.some(t => t.id === task.id)) {
+          entryCreated.tasks.push(task);
+        }
       }
 
       if (task.dueDate && task.dueDate !== createdDate) {
@@ -112,17 +119,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
       }
 
       if (task.status === 'COMPLETED') {
-        const completedDate = task.completedAt ? task.completedAt.split('T')[0] : (task.dueDate || createdDate);
-        const compEntry = getOrCreate(completedDate);
-        if (!compEntry.tasks.some(t => t.id === task.id)) {
-          compEntry.tasks.push(task);
+        const completedDate = task.completedAt ? formatDateOnly(task.completedAt) : (task.dueDate || createdDate);
+        if (completedDate) {
+          const compEntry = getOrCreate(completedDate);
+          if (!compEntry.tasks.some(t => t.id === task.id)) {
+            compEntry.tasks.push(task);
+          }
+          compEntry.completedCount += 1;
         }
-        compEntry.completedCount += 1;
       }
 
       // 2. Time entries for this task
       (task.timeEntries || []).forEach(te => {
-        const entryDate = te.date || te.startTime.split('T')[0];
+        const entryDate = te.date || formatDateOnly(te.startTime);
+        if (!entryDate) return;
         const dayEntry = getOrCreate(entryDate);
         dayEntry.totalSeconds += te.durationSeconds;
         if (!dayEntry.tasks.some(t => t.id === task.id)) {
@@ -153,7 +163,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
       const d = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, d);
-      const dateStr = prevDate.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(prevDate);
       days.push({
         dateStr,
         dayNumber: d,
@@ -165,7 +175,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
     // Current month days
     for (let d = 1; d <= daysInMonth; d++) {
       const thisDate = new Date(year, month, d);
-      const dateStr = thisDate.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(thisDate);
       days.push({
         dateStr,
         dayNumber: d,
@@ -179,7 +189,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
     const remaining = totalSlots - days.length;
     for (let d = 1; d <= remaining; d++) {
       const nextDate = new Date(year, month + 1, d);
-      const dateStr = nextDate.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(nextDate);
       days.push({
         dateStr,
         dayNumber: d,
@@ -198,15 +208,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
   const monthStats = useMemo(() => {
     let monthlySeconds = 0;
     let monthlyCompleted = 0;
+    const monthPrefix = `${year}-${(month + 1).toString().padStart(2, '0')}`;
 
     tasks.forEach(t => {
       (t.timeEntries || []).forEach(te => {
-        const d = te.date || te.startTime.split('T')[0];
-        if (d.startsWith(`${year}-${(month + 1).toString().padStart(2, '0')}`)) {
+        const d = te.date || formatDateOnly(te.startTime);
+        if (d.startsWith(monthPrefix)) {
           monthlySeconds += te.durationSeconds;
         }
       });
-      if (t.status === 'COMPLETED' && t.completedAt?.startsWith(`${year}-${(month + 1).toString().padStart(2, '0')}`)) {
+      const completedDay = t.completedAt ? formatDateOnly(t.completedAt) : '';
+      if (t.status === 'COMPLETED' && completedDay.startsWith(monthPrefix)) {
         monthlyCompleted += 1;
       }
     });

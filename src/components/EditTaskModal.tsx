@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Task, TaskCategory, WorkLocation, TaskPriority } from '@/types';
 import { useTasks } from '@/context/TaskContext';
-import { getTodayDateString } from '@/lib/time';
+import { getTodayDateString, formatDateOnly } from '@/lib/time';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { X, Pencil, Calendar, Check } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, t
   const [location, setLocation] = useState<WorkLocation>(task.location);
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [startDate, setStartDate] = useState(
-    task.createdAt ? task.createdAt.split('T')[0] : getTodayDateString()
+    (task.createdAt ? formatDateOnly(task.createdAt) : '') || getTodayDateString()
   );
   const [dueDate, setDueDate] = useState(task.dueDate || '');
   const [tagsInput, setTagsInput] = useState(task.tags ? task.tags.join(', ') : '');
@@ -36,7 +36,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, t
       setCategory(task.category);
       setLocation(task.location);
       setPriority(task.priority);
-      setStartDate(task.createdAt ? task.createdAt.split('T')[0] : getTodayDateString());
+      setStartDate((task.createdAt ? formatDateOnly(task.createdAt) : '') || getTodayDateString());
       setDueDate(task.dueDate || '');
       setTagsInput(task.tags && task.tags.length > 0 ? task.tags.join(', ') : '');
     }

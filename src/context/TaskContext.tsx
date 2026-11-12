@@ -22,7 +22,7 @@ import {
   getOfflineQueue,
 } from '@/lib/cloudSync';
 import { useAuth } from './AuthContext';
-import { getTodayDateString, getDatesInRange } from '@/lib/time';
+import { getTodayDateString, getLocalDateString, getDatesInRange } from '@/lib/time';
 import confetti from 'canvas-confetti';
 
 interface TaskContextType {
@@ -464,7 +464,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const durationSeconds = Math.max(1, Math.floor((now - activeTimer.startTime) / 1000));
     const nowIso = new Date(now).toISOString();
     const startIso = new Date(activeTimer.startTime).toISOString();
-    const dateStr = startIso.split('T')[0];
+    const dateStr = getLocalDateString(new Date(activeTimer.startTime));
 
     const completedEntry: TimeEntry = {
       id: activeTimer.entryId || `entry-${Date.now()}`,
@@ -604,7 +604,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const previousTaskState = { ...task };
     const nowIso = new Date().toISOString();
-    const dateStr = nowIso.split('T')[0];
+    const dateStr = getTodayDateString();
 
     const extraSeconds = options?.additionalSeconds || 0;
     let updatedEntries = [...(task.timeEntries || [])];

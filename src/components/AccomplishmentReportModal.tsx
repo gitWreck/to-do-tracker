@@ -6,6 +6,7 @@ import {
   exportToCSV,
   generateWeeklySummaryMarkdown,
 } from '@/lib/export';
+import { getLocalDateString, getTodayDateString } from '@/lib/time';
 import {
   X,
   FileSpreadsheet,
@@ -39,8 +40,8 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
   // Filter rows
   const filteredRows = useMemo(() => {
     const nowMs = Date.now();
-    const cutoff7Days = new Date(nowMs - 7 * 86400000).toISOString().split('T')[0];
-    const cutoff30Days = new Date(nowMs - 30 * 86400000).toISOString().split('T')[0];
+    const cutoff7Days = getLocalDateString(new Date(nowMs - 7 * 86400000));
+    const cutoff30Days = getLocalDateString(new Date(nowMs - 30 * 86400000));
 
     return allRows.filter(row => {
       // Project filter
@@ -73,7 +74,7 @@ export const AccomplishmentReportModal: React.FC<AccomplishmentReportModalProps>
   if (!shouldRender) return null;
 
   const handleExportCSV = () => {
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = getTodayDateString();
     exportToCSV(filteredRows, `Accomplishment_Report_${dateStr}.csv`);
   };
 

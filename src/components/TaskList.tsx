@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTasks } from '@/context/TaskContext';
 import { TaskCard } from './TaskCard';
-import { getDateGroupMeta, getTodayDateString } from '@/lib/time';
+import { getDateGroupMeta, getTodayDateString, formatDateOnly } from '@/lib/time';
 import {
   Search,
   Plus,
@@ -80,7 +80,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
       > = {};
 
       filteredTasks.forEach(task => {
-        const dateKey = task.createdAt ? task.createdAt.split('T')[0] : 'Historical';
+        const dateKey = (task.createdAt ? formatDateOnly(task.createdAt) : '') || 'Historical';
         if (!groups[dateKey]) {
           const meta = getDateGroupMeta(dateKey);
           groups[dateKey] = {
@@ -109,7 +109,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onOpenCreateModal }) => {
       > = {};
 
       filteredTasks.forEach(task => {
-        const dateKey = task.completedAt ? task.completedAt.split('T')[0] : 'Earlier';
+        const dateKey = (task.completedAt ? formatDateOnly(task.completedAt) : '') || 'Earlier';
         if (!groups[dateKey]) {
           const meta = getDateGroupMeta(dateKey);
           groups[dateKey] = {

@@ -1,5 +1,5 @@
 import { Task, Project } from '@/types';
-import { formatTimeOnly, formatDecimalHours } from './time';
+import { formatTimeOnly, formatDecimalHours, formatDateOnly } from './time';
 
 export interface AccomplishmentRow {
   date: string;
@@ -30,7 +30,7 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
 
     if (task.timeEntries && task.timeEntries.length > 0) {
       task.timeEntries.forEach(entry => {
-        const rowDate = entry.date || (entry.startTime ? entry.startTime.split('T')[0] : '');
+        const rowDate = entry.date || formatDateOnly(entry.startTime);
         rows.push({
           date: rowDate,
           project: projectName,
@@ -45,7 +45,7 @@ export function buildAccomplishmentRows(tasks: Task[], projects: Project[]): Acc
       });
     } else {
       // If task has no separate time logs but has total duration or completed
-      const rowDate = task.completedAt ? task.completedAt.split('T')[0] : task.createdAt.split('T')[0];
+      const rowDate = task.completedAt ? formatDateOnly(task.completedAt) : formatDateOnly(task.createdAt);
       rows.push({
         date: rowDate,
         project: projectName,

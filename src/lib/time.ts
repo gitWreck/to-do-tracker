@@ -110,7 +110,7 @@ export function getTaskDateSpan(task: {
 
   if (task.timeEntries && task.timeEntries.length > 0) {
     const sortedDates = task.timeEntries
-      .map(e => e.date || (e.startTime ? e.startTime.split('T')[0] : ''))
+      .map(e => e.date || (e.startTime ? formatDateOnly(e.startTime) : ''))
       .filter(Boolean)
       .sort();
     if (sortedDates.length > 0) {
