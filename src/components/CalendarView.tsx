@@ -274,13 +274,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onOpenCreateWithDate
             <span className="hidden sm:inline">Completed:</span>
             <strong className="text-slate-900 dark:text-white">{monthStats.completedCount}</strong>
           </span>
-          <button
-            onClick={() => onOpenCreateWithDate(selectedDateStr)}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add on Date</span>
-          </button>
         </div>
       </div>
 
