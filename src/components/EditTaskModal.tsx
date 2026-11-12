@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Task, TaskCategory, WorkLocation, TaskPriority } from '@/types';
 import { useTasks } from '@/context/TaskContext';
 import { getTodayDateString } from '@/lib/time';
@@ -68,7 +69,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, t
 
   const selectedProject = projects.find(p => p.id === projectId) || projects[0];
 
-  return (
+  return createPortal(
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/60 dark:bg-black/75 backdrop-blur-sm transition-opacity duration-200 overflow-hidden ${
         isEntered ? 'opacity-100 ease-out' : 'opacity-0 ease-in pointer-events-none'
@@ -456,7 +457,8 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, t
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -10,6 +10,12 @@
   ::selection {
     @apply bg-indigo-500 text-white;
   }
+  input,
+  textarea,
+  [contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
 }
 
 /* Custom scrollbars */
